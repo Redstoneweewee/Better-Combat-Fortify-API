@@ -1,10 +1,10 @@
 {
 	"$schema": "https://raw.githubusercontent.com/Bedrock-OSS/regolith-schemas/main/config/v1.4.json",
-	"author": "Your name",
-	"name": "Project name",
+	"author": "Warden Creations",
+	"name": "Better Combat",
 	"packs": {
-		"behaviorPack": "./packs/BP",
-		"resourcePack": "./packs/RP"
+		"behaviorPack": "./packs/development_behavior_packs",
+		"resourcePack": "./packs/development_resource_packs"
 	},
 	"regolith": {
 		"dataPath": "./packs/data",
