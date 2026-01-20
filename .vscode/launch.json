@@ -6,7 +6,6 @@
         "request": "attach",
         "name": "Debug with Minecraft",
         "mode": "listen",
-        "preLaunchTask": "build",
         "sourceMapRoot": "${workspaceFolder}/Regolith/packs/BP/debug/",
         "generatedSourceRoot": "${workspaceFolder}/Regolith/packs/BP/scripts/",
         "port": 19144
