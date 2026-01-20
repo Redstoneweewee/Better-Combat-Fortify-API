@@ -65,7 +65,7 @@ task("package", series("clean-collateral", "copyArtifacts"));
 task(
   "local-deploy",
   watchTask(
-    ["../Regolith/packs/ts-scripts/**/*.ts", "behavior_packs/**/*.{json,lang,png}", "resource_packs/**/*.{json,lang,png}"],
+    ["../Regolith/packs/ts-scripts/**/*.ts"],
     series("clean-local", "build", "package")
   )
 );

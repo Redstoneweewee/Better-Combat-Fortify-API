@@ -87,4 +87,4 @@ sm.registerSamples({
   scriptBox: [scriptBox]
 });
 
-//# sourceMappingURL=../../../../ts/debug/main.js.map
+//# sourceMappingURL=../../../../ts-setup/debug/main.js.map
