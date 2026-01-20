@@ -1,3 +1,6 @@
+## Empty Template:
+This is a snapshot of the repository with ts to js and debugger working but no code written
+
 ## Better Combat: Fortify API
 This is a new project created by Redstoneweewee from Warden Creations. This is a Minecraft Bedrock addon that uses the Minecraft scripting API to create new custom APIs for custom weapons.
 
