@@ -3,8 +3,8 @@
 	"author": "Warden Creations",
 	"name": "Better Combat",
 	"packs": {
-		"behaviorPack": "./packs/development_behavior_packs",
-		"resourcePack": "./packs/development_resource_packs"
+		"behaviorPack": "./packs/BP",
+		"resourcePack": "./packs/RP"
 	},
 	"regolith": {
 		"dataPath": "./packs/data",

@@ -1,6 +1,8 @@
 /build
 /.regolith
-
+node_modules
+ts-setup/node_modules
+.DS_Store
 $PROFILE.lnk
 
 ## Ignore Visual Studio temporary files, build results, and
