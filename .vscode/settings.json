@@ -1,0 +1,24 @@
+{
+    "eslint.experimental.useFlatConfig": true,
+    "window.enableUriHandler": true,
+    "eslint.workingDirectories": [
+        {
+            "pattern": "./build-challenge/*/"
+        },
+        {
+            "pattern": "./howto-gallery/*/"
+        },
+        {
+            "pattern": "./script-box/*/"
+        },
+        {
+            "pattern": "./ts-starter/*/"
+        },
+        {
+            "pattern": "./ts-starter-complete-cotta/*/"
+        },
+        {
+            "pattern": "./custom-components/*/"
+        },
+    ]
+}

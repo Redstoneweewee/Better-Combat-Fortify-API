@@ -1,0 +1,17 @@
+{
+	"rp": {
+		"C:\\Users\\leife\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang/development_resource_packs/Project name_rp": [
+			"LICENSE",
+			"manifest.json",
+			"pack_icon.png"
+		]
+	},
+	"bp": {
+		"C:\\Users\\leife\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang/development_behavior_packs/Project name_bp": [
+			"LICENSE",
+			"manifest.json",
+			"pack_icon.png",
+			"scripts\\Main.js"
+		]
+	}
+}
