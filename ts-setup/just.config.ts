@@ -30,7 +30,7 @@ const bundleTaskOptions: BundleTaskParameters = {
   outfile: path.resolve(__dirname, "../Regolith/packs/BP/scripts/main.js"),
   minifyWhitespace: false,
   sourcemap: true,
-  outputSourcemapPath: path.resolve(__dirname, "./debug"),
+  outputSourcemapPath: path.resolve(__dirname, "../Regolith/packs/BP/debug"),
   dropLabels: isProduction ? ['dev'] : undefined
 };
 

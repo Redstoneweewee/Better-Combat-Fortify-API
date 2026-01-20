@@ -18,8 +18,8 @@
        "noImplicitUseStrict":false,
        "outDir":"lib",
        "rootDir": "..",
-       "baseUrl":"behavior_packs/",
-       "listFiles":false,
+       "baseUrl":"../Regolith/packs/BP/",
+       "listFiles":true,
        "noEmitHelpers":true,
        "skipLibCheck": true
     },

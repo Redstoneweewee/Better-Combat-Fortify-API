@@ -1,20 +1,16 @@
 {
     "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Open New External PowerShell",
-            "type": "shell",
-            "command": "powershell.exe -NoExit -Command \"cd '${workspaceFolder}'\"",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "focus": true,
-                "panel": "shared",
-                "reveal": "always"
-            },
-            "problemMatcher": []
-        }
+    "tasks": [     
+      {
+        "label": "build",
+        "type": "shell",
+        "command": "npm run build"
+      },
+      {
+        "label": "deploy",
+        "type": "shell",
+        "command": "npm run local-deploy"
+      }
     ]
-}
+  }
+  
