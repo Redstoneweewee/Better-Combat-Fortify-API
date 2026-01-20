@@ -1,7 +1,9 @@
-import SampleManager from "./SampleManager";
-import { scriptBox } from "./ScriptBox";
-const sm = new SampleManager();
-sm.registerSamples({
-    scriptBox: [scriptBox],
-});
+import { world, system } from "@minecraft/server";
+function mainTick() {
+    if (system.currentTick % 100 === 0) {
+        world.sendMessage("Hello starter! Tick: " + system.currentTick);
+    }
+    system.run(mainTick);
+}
+system.run(mainTick);
 //# sourceMappingURL=main.js.map

@@ -5,14 +5,19 @@
         "name": "!!§e§lBETTER COMBAT - Fortify API [BP] (Development Pack)",
 		"uuid": "d3b8f3e1-5c3a-4f4e-9f4e-2c3b6e5f7a9c",
         "version": [ 1, 0, 0 ],
-        "min_engine_version": [ 1, 19, 70 ]
+		"min_engine_version": [
+			1,
+			20,
+			30
+		]
     },
     "modules": [
 		{
+      		"description": "Script resources",
 			"type": "script",
 			"language": "javascript",
 			"uuid": "a1f5c6d2-3e4b-4f7a-8c9d-0b1a2b3c4d5e",
-			"entry": "scripts/Main.js",
+			"entry": "scripts/main.js",
 			"version": [ 1, 0, 0 ]
 		}
 	],
@@ -23,14 +28,7 @@
 		},
 		{
 			"module_name": "@minecraft/server",
-			"version": "1.12.0"
-		},
-		{
-		  "module_name": "@minecraft/server-ui",
-		  "version": "1.0.0"
+			"version": "2.0.0"
 		}
-	],
-    "metadata": {
-        "product_type": "addon"
-    }
+	]
 }
