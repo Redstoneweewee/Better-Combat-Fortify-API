@@ -32,5 +32,8 @@
     },
     "devDependencies": {
         "@minecraft/core-build-tasks": "^5.5.0"
+    },
+    "dependencies": {
+        "@minecraft/math": "^2.3.0"
     }
 }
