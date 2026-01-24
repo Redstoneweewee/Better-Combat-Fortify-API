@@ -1,0 +1,24 @@
+{
+    "format_version": 2,
+    "header": {
+        "description": "BETTER COMBAT - Fortify API [RP]\nYT: §b§lWarden Creations (Development Pack)",
+        "name": "!!§e§lBETTER COMBAT - Fortify API [RP] (Development Pack)",
+		"uuid": "c2b1d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+        "version": [ 1, 0, 0 ],
+        "min_engine_version": [ 1, 19, 70 ]
+    },
+    "modules": [
+        {
+            "description": "Made by Warden Creations",
+            "type": "resources",
+			"uuid": "636508ed-f6ba-4a86-bf4e-6c80bf32a3b6",
+            "version": [ 1, 0, 0 ]
+        }
+    ],
+	"dependencies": [
+		{
+			"uuid": "d3b8f3e1-5c3a-4f4e-9f4e-2c3b6e5f7a9c",
+            "version": [ 1, 0, 0 ]
+		}
+	]
+}

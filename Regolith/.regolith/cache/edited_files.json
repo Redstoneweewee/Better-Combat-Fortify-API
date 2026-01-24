@@ -2,8 +2,13 @@
 	"rp": {
 		"C:\\Users\\leife\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang/development_resource_packs/Better Combat_rp": [
 			"LICENSE",
+			"attachables\\echo_staff.json",
 			"manifest.json",
-			"pack_icon.png"
+			"pack_icon.png",
+			"textures\\item_texture.json",
+			"textures\\items\\custom_sword.pdn",
+			"textures\\items\\custom_sword.png",
+			"textures\\textures_list.json"
 		],
 		"C:\\Users\\leife\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang/development_resource_packs/Project name_rp": [
 			"LICENSE",
@@ -14,7 +19,11 @@
 	"bp": {
 		"C:\\Users\\leife\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang/development_behavior_packs/Better Combat_bp": [
 			"LICENSE",
+			"animations\\test.json",
 			"debug\\main.js.map",
+			"entities\\player.json",
+			"item_catalog\\crafting_item_catalog.json",
+			"items\\custom_sword_1.json",
 			"manifest.json",
 			"pack_icon.png",
 			"scripts\\main.js"

@@ -6,7 +6,6 @@ import { Slash } from "./attacks/slash";
 function mainTick() {
   if (system.currentTick % 50 === 0) {
 
-    // Example usage: Create a circle for the first player
     const players = world.getPlayers();
     if (players.length > 0) {
       const player = players[0];
@@ -17,6 +16,7 @@ function mainTick() {
       slash.drawSlashEffect(player.dimension, center, viewVector);
 
     }
+    //players[0].startItemCooldown("fort:test", -1);
   }
 
   system.run(mainTick);

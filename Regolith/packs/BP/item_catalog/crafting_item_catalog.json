@@ -1,0 +1,21 @@
+{
+    "format_version": "1.21.60",
+    "minecraft:crafting_items_catalog": {
+       "categories": [
+          {
+             "category_name": "equipment",
+             "groups": [
+                {
+                   "group_identifier": {
+                      "icon": "fort:custom_sword_1",
+                      "name": "fort:itemGroup.name.weapons"
+                   },
+                   "items": [
+                      "fort:custom_sword_1"
+                   ]
+                }
+             ]
+          }
+       ]
+    }
+ }

@@ -3,7 +3,6 @@ import { Vector3Utils } from "./utils/minecraft-math";
 import { Slash } from "./attacks/slash";
 function mainTick() {
     if (system.currentTick % 50 === 0) {
-        // Example usage: Create a circle for the first player
         const players = world.getPlayers();
         if (players.length > 0) {
             const player = players[0];
@@ -12,6 +11,7 @@ function mainTick() {
             const slash = new Slash(3, 120, 30, { x: 0, y: 0, z: 2 });
             slash.drawSlashEffect(player.dimension, center, viewVector);
         }
+        //players[0].startItemCooldown("fort:test", -1);
     }
     system.run(mainTick);
 }
