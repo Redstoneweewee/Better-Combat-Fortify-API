@@ -1,6 +1,8 @@
-import { Entity, Player, system, world } from "@minecraft/server";
-import { EntityUtils } from "./utils/utils";
-import { Consts } from "./constants";
+import { Entity, GameMode, Player, system, world } from "@minecraft/server";
+import { CustomVectorUtils, EntityUtils } from "./utils/utils";
+import { C } from "./constants";
+import { Interval } from "./utils/interval";
+import { Vector3Builder, Vector3Utils } from "./utils/minecraft-math";
 
 enum HitType {
     Block,
@@ -22,7 +24,7 @@ world.afterEvents.entityHitEntity.subscribe(eventData => {
     const hitEntity = eventData.hitEntity;
     if(!(entity instanceof Player)) return;
     if(!EntityUtils.getMainhandItemStack(entity)?.typeId.includes("fort:")) return;
-    if(hitEntity.typeId === Consts.HITDETECTENTITYNAME) {
+    if(hitEntity.typeId === C.HITDETECTENTITYNAME) {
         onHit(HitType.HitDetectEntity);
     }
     else {
@@ -31,6 +33,35 @@ world.afterEvents.entityHitEntity.subscribe(eventData => {
 });
 
 
+Interval.addInterval(new Interval.MainInterval("interval1", () => {
+    world.getAllPlayers().forEach(player => {
+        let shouldSpawnHitDetectEntity = true;
+
+        const BlockRaycastHit = player.getBlockFromViewDirection({maxDistance: C.BLOCKPLACERANGE+2});
+        if(BlockRaycastHit !== undefined) {
+            const hitBlock = BlockRaycastHit.block;
+            const hitPos = Vector3Utils.add({x: hitBlock.x, y: hitBlock.y, z: hitBlock.z}, BlockRaycastHit.faceLocation);
+            const distance = Vector3Utils.magnitude(Vector3Utils.subtract(hitPos, player.getHeadLocation()));
+            if(distance <= C.BLOCKPLACERANGE) {
+                shouldSpawnHitDetectEntity = false;
+            }
+            //world.sendMessage(`Block hit at distance: ${distance}`);
+        }
+        const gamemode = player.getGameMode();
+        const entityRaycastRange = gamemode === GameMode.creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
+        //world.sendMessage(`Gamemode: ${gamemode}, Enum: ${GameMode.creative} Entity raycast range: ${entityRaycastRange}`);
+        if(EntityUtils.getNearbyEntities(player, entityRaycastRange).length > 0) {
+            const entityRaycastHit = EntityUtils.getValidEntitiesFromRayCast(player, player.getHeadLocation(), player.getViewDirection(), entityRaycastRange);
+            if(entityRaycastHit.length > 0) {
+                shouldSpawnHitDetectEntity = false;
+            }
+        }
+
+        if(shouldSpawnHitDetectEntity) {
+            world.sendMessage("Spawning hit detect entity");
+        }
+    });
+}, 20));
 
 function onHit(hitType: HitType) {
     world.sendMessage(`Hit detected, type: ${HitType[hitType]}`);

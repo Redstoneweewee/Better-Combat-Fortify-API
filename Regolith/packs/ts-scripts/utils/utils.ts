@@ -1,6 +1,6 @@
-import { Dimension, Entity, EntityComponentTypes, EntityEquippableComponent, EquipmentSlot, ItemStack, Player, Vector3 } from "@minecraft/server";
+import { Dimension, Entity, EntityComponentTypes, EntityEquippableComponent, EntityRaycastHit, EquipmentSlot, ItemStack, Player, Vector3 } from "@minecraft/server";
 import { Vector3Utils } from "./minecraft-math";
-import { Consts } from "../constants";
+import { C } from "../constants";
 
 export interface ArcRotationParams {
   rotAxis: Vector3;
@@ -8,6 +8,7 @@ export interface ArcRotationParams {
 }
 
 export class CustomVectorUtils {
+  
   static createBasisFromForward(forward: Vector3): {
     forward: Vector3;
     right: Vector3;
@@ -85,6 +86,30 @@ export class EntityUtils {
     if(!(equipmentComp instanceof EntityEquippableComponent)) return undefined;
     return equipmentComp.getEquipment(EquipmentSlot.Mainhand);
   }
+
+  static getNearbyEntities(source: Entity, range: number): Entity[] {
+    const sourcePos = source.location;
+    const allEntities = source.dimension.getEntities({location: sourcePos, maxDistance: range, minDistance: 0.001});
+    return allEntities;
+  }
+  /**Excludes self & excludes creative players */
+  static getValidEntitiesFromRayCast(source: Entity, location: Vector3, direction: Vector3, range?: number): EntityRaycastHit[] {
+    const entityRaycastHit = source.dimension.getEntitiesFromRay(location, direction, { 
+        includeLiquidBlocks: false,
+        includePassableBlocks: false,
+        maxDistance: range, 
+        excludeFamilies: C.HITEXCLUDEDFAMILIES, 
+        excludeTypes: C.HITEXCLUDEDTYPES
+    });
+    let output: EntityRaycastHit[] = [];
+    entityRaycastHit.forEach(hit => {
+      if(hit.entity instanceof Player && C.HITEXCLUDEDGAMEMODES.includes(hit.entity.getGameMode())) return;
+      if(hit.entity !== source) {
+          output.push(hit);
+      }
+    });
+    return output;
+  }
 }
 
 export class DrawEffects {
@@ -97,7 +122,7 @@ export class DrawEffects {
   ) {
     for (let i = 0; i < pointsNum; i++) {
       const t = i / pointsNum;
-      dimension.spawnParticle(Consts.DEBUGPARTICLENAME, {
+      dimension.spawnParticle(C.DEBUGPARTICLENAME, {
         x: startPos.x + direction.x * t * length,
         y: startPos.y + direction.y * t * length,
         z: startPos.z + direction.z * t * length,
@@ -132,7 +157,7 @@ export class DrawEffects {
         r++;
       }
 
-      dimension.spawnParticle(Consts.DEBUGPARTICLENAME, {
+      dimension.spawnParticle(C.DEBUGPARTICLENAME, {
         x: startPos.x + dir.x * distance,
         y: startPos.y + dir.y * distance,
         z: startPos.z + dir.z * distance,

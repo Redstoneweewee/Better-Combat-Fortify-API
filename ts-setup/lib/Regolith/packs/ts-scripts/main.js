@@ -1,23 +1,10 @@
-import { world, system } from "@minecraft/server";
 import { Vector3Utils } from "./utils/minecraft-math";
 import { Slash } from "./attacks/slash";
+import { Interval } from "./utils/interval";
 import "./scriptEvents";
 import "./hitTest";
-function mainTick() {
-    if (system.currentTick % 50 === 0) {
-        const players = world.getPlayers();
-        if (players.length > 0) {
-            const player = players[0];
-            const viewVector = player.getViewDirection();
-            const center = player.getHeadLocation();
-            const slash = new Slash(3, 120, 30, { x: 0, y: 0, z: 2 });
-            //slash.drawSlashEffect(player.dimension, center, viewVector);
-        }
-        //players[0].startItemCooldown("fort:test", -1);
-    }
-    system.run(mainTick);
-}
-system.run(mainTick);
+const slash = new Slash(3, 120, 30, { x: 0, y: 0, z: 2 });
+Interval.start();
 function isHitBySlash(playerPos, playerForward, // must be normalized
 targetPos, radius, horizontalAngleDeg, verticalAngleDeg) {
     // Vector from player to target
