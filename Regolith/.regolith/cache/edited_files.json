@@ -27,6 +27,7 @@
 			"animations\\test.json",
 			"debug\\main.js.map",
 			"entities\\armor_stand.json",
+			"entities\\empty_hit_entity.json",
 			"entities\\player.json",
 			"item_catalog\\crafting_item_catalog.json",
 			"items\\custom_sword_1.json",

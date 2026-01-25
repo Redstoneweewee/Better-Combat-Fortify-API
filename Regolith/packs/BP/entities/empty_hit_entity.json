@@ -1,0 +1,73 @@
+{
+	"format_version": "1.21.0",
+	"minecraft:entity": {
+		"description": {
+			"identifier": "fort:hit_detect_entity",
+			"is_spawnable": false,
+			"is_summonable": true,
+			"is_experimental": false
+		},
+		"component_groups": {
+			"fort:despawn": {
+				"minecraft:instant_despawn": {
+					"remove_child_entities": false
+				}
+			}
+		},
+		"components": {
+			"minecraft:knockback_resistance": {
+				"value": 1.0
+			},
+			"minecraft:collision_box": {
+				"width": 0.0001,
+				"height": 0.0001
+			},
+			"minecraft:custom_hit_test": {
+				"hitboxes": [
+					{
+						"pivot": [
+							0,
+							0,
+							0
+						],
+						"width": 0.45,
+						"height": 0.45
+					}
+				]
+			},
+			"minecraft:damage_sensor": {
+				"triggers": {
+					"cause": "all",
+					"deals_damage": false
+				}
+			},
+			"minecraft:type_family": {
+				"family": [
+					"inanimate",
+					"fortify_entity",
+					"hit_detect_entity"
+				]
+			},
+			"minecraft:health": {
+				"value": 9999999,
+				"max": 9999999
+			},
+			"minecraft:vibration_damper": {},
+			"minecraft:conditional_bandwidth_optimization": {},
+			"minecraft:physics": {},
+			"minecraft:pushable": {
+				"is_pushable": false,
+				"is_pushable_by_piston": false
+			}
+		},
+		"events": {
+			"fort:despawn": {
+				"add": {
+					"component_groups": [
+						"fort:despawn"
+					]
+				}
+			}
+		}
+	}
+}

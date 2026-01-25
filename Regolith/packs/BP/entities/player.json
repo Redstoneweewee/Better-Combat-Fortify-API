@@ -8,7 +8,7 @@
       "is_summonable": false,
       
       "properties": {
-        "yes:rotation_offset_x": {
+        "fort:rotation_offset_x": {
           "type": "int",
           "range": [
             -9999,
@@ -17,7 +17,7 @@
           "default": 0,
           "client_sync": true
         },
-        "yes:rotation_offset_y": {
+        "fort:rotation_offset_y": {
           "type": "int",
           "range": [
             -9999,
@@ -26,7 +26,7 @@
           "default": 0,
           "client_sync": true
         },
-        "yes:rotation_offset_z": {
+        "fort:rotation_offset_z": {
           "type": "int",
           "range": [
             -9999,
@@ -35,7 +35,7 @@
           "default": 0,
           "client_sync": true
         },
-        "yes:transform_offset_x": {
+        "fort:transform_offset_x": {
           "type": "int",
           "range": [
             -9999,
@@ -44,7 +44,7 @@
           "default": 0,
           "client_sync": true
         },
-        "yes:transform_offset_y": {
+        "fort:transform_offset_y": {
           "type": "int",
           "range": [
             -9999,
@@ -53,7 +53,7 @@
           "default": 0,
           "client_sync": true
         },
-        "yes:transform_offset_z": {
+        "fort:transform_offset_z": {
           "type": "int",
           "range": [
             -9999,
@@ -62,7 +62,7 @@
           "default": 0,
           "client_sync": true
         },
-        "yes:scale_offset": {
+        "fort:scale_offset": {
           "type": "int",
           "range": [
             -9999,
@@ -240,7 +240,7 @@
     },
 
     "events": {
-      "yes:test": {
+      "fort:test": {
         "queue_command": {
           "command": [
             "say hie"

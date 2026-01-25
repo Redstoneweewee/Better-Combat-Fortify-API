@@ -31,13 +31,13 @@
         ],
         "pre_animation": [
           "v.attack_time        = c.owning_entity->v.attack_time;",
-          "v.rotation_offset_x  = q.property('yes:rotation_offset_x')/10;",
-          "v.rotation_offset_y  = q.property('yes:rotation_offset_y')/10;",
-          "v.rotation_offset_z  = q.property('yes:rotation_offset_z')/10;",
-          "v.transform_offset_x = q.property('yes:transform_offset_x')/100;",
-          "v.transform_offset_y = q.property('yes:transform_offset_y')/100;",
-          "v.transform_offset_z = q.property('yes:transform_offset_z')/100;",
-          "v.scale_offset       = q.property('yes:scale_offset')/100;"
+          "v.rotation_offset_x  = q.property('fort:rotation_offset_x')/10;",
+          "v.rotation_offset_y  = q.property('fort:rotation_offset_y')/10;",
+          "v.rotation_offset_z  = q.property('fort:rotation_offset_z')/10;",
+          "v.transform_offset_x = q.property('fort:transform_offset_x')/100;",
+          "v.transform_offset_y = q.property('fort:transform_offset_y')/100;",
+          "v.transform_offset_z = q.property('fort:transform_offset_z')/100;",
+          "v.scale_offset       = q.property('fort:scale_offset')/100;"
         ]
       },
       "animations": {

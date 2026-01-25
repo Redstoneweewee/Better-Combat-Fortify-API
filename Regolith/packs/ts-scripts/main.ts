@@ -3,6 +3,7 @@ import { Vector3Utils } from "./utils/minecraft-math";
 import { DrawEffects } from "./utils/utils";
 import { Slash } from "./attacks/slash";
 import "./scriptEvents"
+import "./hitTest";
 
 function mainTick() {
   if (system.currentTick % 50 === 0) {

@@ -2,6 +2,7 @@ import { world, system } from "@minecraft/server";
 import { Vector3Utils } from "./utils/minecraft-math";
 import { Slash } from "./attacks/slash";
 import "./scriptEvents";
+import "./hitTest";
 function mainTick() {
     if (system.currentTick % 50 === 0) {
         const players = world.getPlayers();
