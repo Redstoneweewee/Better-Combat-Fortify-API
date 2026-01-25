@@ -16,6 +16,7 @@
       },
       "scripts": {
         "initialize": [
+          "v.attack_time        = 0;",
           "v.rotation_offset_x  = 0;",
           "v.rotation_offset_y  = 0;",
           "v.rotation_offset_z  = 0;",
@@ -29,6 +30,7 @@
           { "hold_third_person": "!c.is_first_person"}
         ],
         "pre_animation": [
+          "v.attack_time        = c.owning_entity->v.attack_time;",
           "v.rotation_offset_x  = q.property('yes:rotation_offset_x')/10;",
           "v.rotation_offset_y  = q.property('yes:rotation_offset_y')/10;",
           "v.rotation_offset_z  = q.property('yes:rotation_offset_z')/10;",
