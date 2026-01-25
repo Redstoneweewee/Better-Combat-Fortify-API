@@ -15,9 +15,27 @@
         "default": "geometry.fortify.custom_sword"
       },
       "scripts": {
+        "initialize": [
+          "v.rotation_offset_x  = 0;",
+          "v.rotation_offset_y  = 0;",
+          "v.rotation_offset_z  = 0;",
+          "v.transform_offset_x = 0;",
+          "v.transform_offset_y = 0;",
+          "v.transform_offset_z = 0;",
+          "v.scale_offset       = 0;"
+        ],
         "animate": [
           { "hold_first_person": "c.is_first_person"},
           { "hold_third_person": "!c.is_first_person"}
+        ],
+        "pre_animation": [
+          "v.rotation_offset_x  = q.property('yes:rotation_offset_x')/10;",
+          "v.rotation_offset_y  = q.property('yes:rotation_offset_y')/10;",
+          "v.rotation_offset_z  = q.property('yes:rotation_offset_z')/10;",
+          "v.transform_offset_x = q.property('yes:transform_offset_x')/100;",
+          "v.transform_offset_y = q.property('yes:transform_offset_y')/100;",
+          "v.transform_offset_z = q.property('yes:transform_offset_z')/100;",
+          "v.scale_offset       = q.property('yes:scale_offset')/100;"
         ]
       },
       "animations": {

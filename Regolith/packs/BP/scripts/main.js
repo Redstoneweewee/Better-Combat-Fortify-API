@@ -1,5 +1,5 @@
 // ../Regolith/packs/ts-scripts/main.ts
-import { world, system } from "@minecraft/server";
+import { world as world2, system as system2 } from "@minecraft/server";
 
 // ../Regolith/packs/ts-scripts/utils/minecraft-math.js
 import { BlockVolume } from "@minecraft/server";
@@ -329,20 +329,170 @@ var SlashAttacks = {
   Thrust: new Slash(2, 30, 20)
 };
 
+// ../Regolith/packs/ts-scripts/scriptEvents.ts
+import { system, world } from "@minecraft/server";
+system.afterEvents.scriptEventReceive.subscribe((eventData) => {
+  const id = eventData.id;
+  const message = eventData.message;
+  if (id === "yes:transform_offset") {
+    const lowerCase = message.toLowerCase();
+    const type1 = lowerCase[0];
+    const direction = lowerCase[1];
+    const type2 = lowerCase[2];
+    let amount = Number(lowerCase.match(/\d+/) ?? [][0]);
+    if (type2 === "-") {
+      amount = -1 * amount;
+    }
+    if (lowerCase === "toggle") {
+      const value = !Boolean(world.getDynamicProperty("yes:transform_offset_apply_to_players"));
+      world.setDynamicProperty("yes:transform_offset_apply_to_players", value);
+      if (!value) {
+        world.sendMessage("Transform Offsets Apply to armor stands");
+      } else {
+        world.sendMessage("Transform Offsets Apply to players only");
+      }
+      return;
+    } else if (lowerCase.includes("mul")) {
+      world.setDynamicProperty("yes:transform_offset_multiply", amount > 0 ? amount : 1);
+      world.sendMessage(`Set Transform Offset Multiply to ${amount > 0 ? amount : 1}`);
+      return;
+    }
+    if (world.getDynamicProperty("yes:transform_offset_apply_to_players")) {
+      world.getAllPlayers().forEach((player) => {
+        offset(player, lowerCase, type1, direction, type2, amount);
+      });
+    } else {
+      world.getAllPlayers().forEach((player) => {
+        const entities = player?.dimension.getEntities({
+          type: "minecraft:armor_stand",
+          location: player?.location,
+          maxDistance: 15
+        });
+        entities.forEach((entity) => {
+          offset(entity, lowerCase, type1, direction, type2, amount);
+        });
+      });
+    }
+  }
+});
+function offset(entity, lowerCase, type1, direction, type2, amount) {
+  const mult = Number(world.getDynamicProperty("yes:transform_offset_multiply")) ?? 1;
+  if (lowerCase === "read") {
+    const offsets = {
+      rx: 0,
+      ry: 0,
+      rz: 0,
+      tx: 0,
+      ty: 0,
+      tz: 0,
+      sc: 0
+    };
+    offsets.rx = Number(entity.getProperty("yes:rotation_offset_x"));
+    offsets.ry = Number(entity.getProperty("yes:rotation_offset_y"));
+    offsets.rz = Number(entity.getProperty("yes:rotation_offset_z"));
+    offsets.tx = Number(entity.getProperty("yes:transform_offset_x"));
+    offsets.ty = Number(entity.getProperty("yes:transform_offset_y"));
+    offsets.tz = Number(entity.getProperty("yes:transform_offset_z"));
+    offsets.sc = Number(entity.getProperty("yes:scale_offset"));
+    const message = `rotation offset x:  ${offsets.rx}
+rotation offset y:  ${offsets.ry}
+rotation offset z:  ${offsets.rz}
+transform offset x: ${offsets.tx}
+transform offset y: ${offsets.ty}
+transform offset z: ${offsets.tz}
+scale offset:       ${offsets.sc}`;
+    world.sendMessage(message);
+  }
+  if (type1 === "s" && direction === "c") {
+    const oldAmount = Number(entity.getProperty("yes:scale_offset"));
+    if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+      return;
+    }
+    entity.setProperty("yes:scale_offset", oldAmount + amount * mult);
+    world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${type1 + direction}, type: ${type2}, amount: ${amount}`);
+  } else if (type2 !== "s") {
+    if (type1 === "r" && direction === "x") {
+      const oldAmount = Number(entity.getProperty("yes:rotation_offset_x"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("yes:rotation_offset_x", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "r" && direction === "y") {
+      const oldAmount = Number(entity.getProperty("yes:rotation_offset_y"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("yes:rotation_offset_y", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "r" && direction === "z") {
+      const oldAmount = Number(entity.getProperty("yes:rotation_offset_z"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("yes:rotation_offset_z", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "x") {
+      const oldAmount = Number(entity.getProperty("yes:transform_offset_x"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("yes:transform_offset_x", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "y") {
+      const oldAmount = Number(entity.getProperty("yes:transform_offset_y"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("yes:transform_offset_y", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "z") {
+      const oldAmount = Number(entity.getProperty("yes:transform_offset_z"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("yes:transform_offset_z", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    }
+  } else {
+    if (type1 === "r" && direction === "x") {
+      entity.setProperty("yes:rotation_offset_x", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "r" && direction === "y") {
+      entity.setProperty("yes:rotation_offset_y", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "r" && direction === "z") {
+      entity.setProperty("yes:rotation_offset_z", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "x") {
+      entity.setProperty("yes:transform_offset_x", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "y") {
+      entity.setProperty("yes:transform_offset_y", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "z") {
+      entity.setProperty("yes:transform_offset_z", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "s" && direction === "c") {
+      entity.setProperty("yes:scale_offset", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${type1 + direction}, type: ${type2}, amount: ${amount}`);
+    }
+  }
+}
+
 // ../Regolith/packs/ts-scripts/main.ts
 function mainTick() {
-  if (system.currentTick % 50 === 0) {
-    const players = world.getPlayers();
+  if (system2.currentTick % 50 === 0) {
+    const players = world2.getPlayers();
     if (players.length > 0) {
       const player = players[0];
       const viewVector = player.getViewDirection();
       const center = player.getHeadLocation();
       const slash = new Slash(3, 120, 30, { x: 0, y: 0, z: 2 });
-      slash.drawSlashEffect(player.dimension, center, viewVector);
     }
   }
-  system.run(mainTick);
+  system2.run(mainTick);
 }
-system.run(mainTick);
+system2.run(mainTick);
 
 //# sourceMappingURL=../debug/main.js.map

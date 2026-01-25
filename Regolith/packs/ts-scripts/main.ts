@@ -2,6 +2,7 @@ import { world, system, Vector3 } from "@minecraft/server";
 import { Vector3Utils } from "./utils/minecraft-math";
 import { DrawEffects } from "./utils/utils";
 import { Slash } from "./attacks/slash";
+import "./scriptEvents"
 
 function mainTick() {
   if (system.currentTick % 50 === 0) {
@@ -13,7 +14,7 @@ function mainTick() {
       const center = player.getHeadLocation();
 
       const slash = new Slash(3, 120, 30, {x: 0, y: 0, z: 2});
-      slash.drawSlashEffect(player.dimension, center, viewVector);
+      //slash.drawSlashEffect(player.dimension, center, viewVector);
 
     }
     //players[0].startItemCooldown("fort:test", -1);
