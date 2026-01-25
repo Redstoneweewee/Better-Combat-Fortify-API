@@ -2,8 +2,12 @@
 	"rp": {
 		"C:\\Users\\leife\\AppData\\Roaming\\Minecraft Bedrock\\Users\\Shared\\games\\com.mojang/development_resource_packs/Better Combat_rp": [
 			"LICENSE",
-			"attachables\\echo_staff.json",
+			"animations\\global.json",
+			"attachables\\custom_sword_1.json",
 			"manifest.json",
+			"models\\entity\\geometry.custom_sword.bbmodel",
+			"models\\entity\\geometry.custom_sword.json",
+			"models\\entity\\geometry.nexus_bow.json",
 			"pack_icon.png",
 			"textures\\item_texture.json",
 			"textures\\items\\custom_sword.pdn",
