@@ -1,10 +1,16 @@
-import { Dimension, Entity, EntityComponentTypes, EntityEquippableComponent, EntityRaycastHit, EquipmentSlot, ItemStack, Player, Vector3 } from "@minecraft/server";
+import { Dimension, Entity, EntityComponentTypes, EntityEquippableComponent, EntityHealthComponent, EntityRaycastHit, EquipmentSlot, ItemStack, Player, Vector3 } from "@minecraft/server";
 import { Vector3Utils } from "./minecraft-math";
 import { C } from "../constants";
 
 export interface ArcRotationParams {
   rotAxis: Vector3;
   angleDeg: number;
+}
+
+export class CustomMathUtils {
+  static clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+  }
 }
 
 export class CustomVectorUtils {
@@ -60,6 +66,12 @@ export class CustomVectorUtils {
 }
 
 export class EntityUtils {
+  static isAlive(entity: Entity): boolean {
+    const healthComp = entity.getComponent(EntityComponentTypes.Health);
+    if (healthComp === undefined || !(healthComp instanceof EntityHealthComponent)) return false;
+    return true;
+  }
+
   static translateFromHeadLocation(entity: Entity, translation: Vector3, relativeToView: boolean = true): Vector3 {
     const headLocation = entity.getHeadLocation();
     if (relativeToView) {
@@ -87,10 +99,21 @@ export class EntityUtils {
     return equipmentComp.getEquipment(EquipmentSlot.Mainhand);
   }
 
-  static getNearbyEntities(source: Entity, range: number): Entity[] {
+  static getValidEntitiesNearby(source: Entity, range: number): Entity[] {
     const sourcePos = source.location;
-    const allEntities = source.dimension.getEntities({location: sourcePos, maxDistance: range, minDistance: 0.001});
-    return allEntities;
+    const nearbyEntities = source.dimension.getEntities({
+      location: sourcePos,
+      maxDistance: range,
+      excludeFamilies: C.HITEXCLUDEDFAMILIES, 
+      excludeTypes: C.HITEXCLUDEDTYPES
+    });
+    let output: Entity[] = [];
+    for(const entity of nearbyEntities) {
+      if(entity instanceof Player && C.HITEXCLUDEDGAMEMODES.includes(entity.getGameMode())) continue;
+      if(entity === source) continue;
+      output.push(entity);
+    }
+    return output;
   }
   /**Excludes self & excludes creative players */
   static getValidEntitiesFromRayCast(source: Entity, location: Vector3, direction: Vector3, range?: number): EntityRaycastHit[] {

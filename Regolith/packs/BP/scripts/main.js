@@ -214,14 +214,25 @@ var Vector3Utils = class _Vector3Utils {
 };
 
 // ../Regolith/packs/ts-scripts/utils/utils.ts
-import { EntityComponentTypes, EntityEquippableComponent, EquipmentSlot, Player } from "@minecraft/server";
+import { EntityComponentTypes, EntityEquippableComponent, EntityHealthComponent, EquipmentSlot, Player } from "@minecraft/server";
 
 // ../Regolith/packs/ts-scripts/constants.ts
 import { GameMode } from "@minecraft/server";
 var C = class {
+  static NAMESPACE = "fort:";
+  /**World Dynamic Property IDs for linked entities */
+  static NONPERSISTENTDPNAME = "nonpersistent_linked_entities";
+  //non-persistent linked entities world dynamic property name
+  static PERSISTENTDPNAME = "persistent_linked_entities";
+  //persistent linked entities world dynamic property name
+  /**Interval Names */
+  static HITTESTINTERVALNAME = "hitTestInterval";
+  /**Particles */
   static DEBUGPARTICLENAME = "minecraft:basic_flame_particle";
+  /**Entities */
   static HITDETECTENTITYNAME = "fort:hit_detect_entity";
-  static HITEXCLUDEDFAMILIES = ["minecraft:inanimate", "minecraft:projectile"];
+  /**Hit Test */
+  static HITEXCLUDEDFAMILIES = ["minecraft:inanimate", "minecraft:projectile", "inanimate"];
   static HITEXCLUDEDGAMEMODES = [GameMode.creative, GameMode.spectator];
   static HITEXCLUDEDTYPES = [
     "minecraft:item",
@@ -239,12 +250,18 @@ var C = class {
     "minecraft:falling_block",
     "minecraft:fishing_hook"
   ];
+  /**Hit Ranges */
   static BLOCKPLACERANGE = 5.2;
   static CREATIVEHITRANGE = 6;
   static SURVIVALHITRANGE = 3.3;
 };
 
 // ../Regolith/packs/ts-scripts/utils/utils.ts
+var CustomMathUtils = class {
+  static clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+};
 var CustomVectorUtils = class {
   static createBasisFromForward(forward) {
     const upWorld = { x: 0, y: 1, z: 0 };
@@ -272,6 +289,11 @@ var CustomVectorUtils = class {
   }
 };
 var EntityUtils = class {
+  static isAlive(entity) {
+    const healthComp = entity.getComponent(EntityComponentTypes.Health);
+    if (healthComp === void 0 || !(healthComp instanceof EntityHealthComponent)) return false;
+    return true;
+  }
   static translateFromHeadLocation(entity, translation, relativeToView = true) {
     const headLocation = entity.getHeadLocation();
     if (relativeToView) {
@@ -296,10 +318,21 @@ var EntityUtils = class {
     if (!(equipmentComp instanceof EntityEquippableComponent)) return void 0;
     return equipmentComp.getEquipment(EquipmentSlot.Mainhand);
   }
-  static getNearbyEntities(source, range) {
+  static getValidEntitiesNearby(source, range) {
     const sourcePos = source.location;
-    const allEntities = source.dimension.getEntities({ location: sourcePos, maxDistance: range, minDistance: 1e-3 });
-    return allEntities;
+    const nearbyEntities = source.dimension.getEntities({
+      location: sourcePos,
+      maxDistance: range,
+      excludeFamilies: C.HITEXCLUDEDFAMILIES,
+      excludeTypes: C.HITEXCLUDEDTYPES
+    });
+    let output = [];
+    for (const entity of nearbyEntities) {
+      if (entity instanceof Player && C.HITEXCLUDEDGAMEMODES.includes(entity.getGameMode())) continue;
+      if (entity === source) continue;
+      output.push(entity);
+    }
+    return output;
   }
   /**Excludes self & excludes creative players */
   static getValidEntitiesFromRayCast(source, location, direction, range) {
@@ -621,32 +654,141 @@ scale offset:       ${offsets.sc}`;
 }
 
 // ../Regolith/packs/ts-scripts/hitTest.ts
-import { GameMode as GameMode2, Player as Player3, world as world2 } from "@minecraft/server";
+import { GameMode as GameMode2, Player as Player3, system as system3, world as world3 } from "@minecraft/server";
+
+// ../Regolith/packs/ts-scripts/utils/entityLinker.ts
+import { world as world2 } from "@minecraft/server";
+var EntityLinker = class _EntityLinker {
+  /**Maps `entity.id` to arrays of linked entities*/
+  static #linkedEntities = /* @__PURE__ */ new Map();
+  /**Maps linked entity.id to owner entity */
+  static #ownerEntity = /* @__PURE__ */ new Map();
+  /**Maps linked entity.id to stasis state */
+  static #linkedEntityStasis = /* @__PURE__ */ new Map();
+  static #initializeSourceEntity(source) {
+    if (!_EntityLinker.#linkedEntities.has(source.id)) {
+      _EntityLinker.#linkedEntities.set(source.id, []);
+    }
+  }
+  /**Assumes there's only one entity of a this typeId linked to the source entity */
+  static getLinkedEntityUsingTypeId(source, typeId) {
+    const linkedEntities = _EntityLinker.getLinkedEntities(source);
+    for (const entity of linkedEntities) {
+      if (entity.typeId === typeId) {
+        return entity;
+      }
+    }
+    return void 0;
+  }
+  static getLinkedEntities(source) {
+    return _EntityLinker.#linkedEntities.get(source.id) ?? [];
+  }
+  static getOwnerEntity(source) {
+    return _EntityLinker.#ownerEntity.get(source.id);
+  }
+  /**Links the new entity to the source entity:
+   * `getOwnerEntity(linkedEntity)` returns source entity
+   * `getLinkedEntities(sourceEntity)` includes new entity
+   * and adds the new entity to `linkedEntities` map
+  */
+  static spawnLinkedEntity(source, entityTypeId, relativeLocation, allowSameTypeId) {
+    if (!_EntityLinker.#linkedEntities.has(source.id)) {
+      _EntityLinker.#initializeSourceEntity(source);
+    }
+    if (!allowSameTypeId) {
+      const linkedEntities = _EntityLinker.getLinkedEntities(source);
+      for (const entity of linkedEntities) {
+        if (entity.typeId === entityTypeId) {
+          console.warn(`Entity of typeId ${entityTypeId} already linked to source entity ${source.id}. Returning existing entity.`);
+          return entity;
+        }
+      }
+    }
+    const dimension = source.dimension;
+    const newEntity = dimension.spawnEntity(entityTypeId, EntityUtils.translateFromHeadLocation(source, relativeLocation));
+    _EntityLinker.#addIdToWorldDynamicProperties(newEntity.id, false);
+    _EntityLinker.#linkedEntities.get(source.id)?.push(newEntity);
+    _EntityLinker.#ownerEntity.set(newEntity.id, source);
+    return newEntity;
+  }
+  static #addIdToWorldDynamicProperties(linkedEntityId, isPersistent) {
+    const existing = JSON.parse(String(world2.getDynamicProperty(isPersistent ? C.PERSISTENTDPNAME : C.NONPERSISTENTDPNAME) ?? "[]")) ?? [];
+    existing.push(linkedEntityId);
+    world2.setDynamicProperty(isPersistent ? C.PERSISTENTDPNAME : C.NONPERSISTENTDPNAME, JSON.stringify(existing));
+  }
+  static removeAllNonPersistentLinkedEntities() {
+    const linkedEntityIds = JSON.parse(String(world2.getDynamicProperty(C.NONPERSISTENTDPNAME) ?? "[]")) ?? [];
+    linkedEntityIds.forEach((id) => {
+      world2.getEntity(id)?.remove();
+      _EntityLinker.#ownerEntity.delete(id);
+      _EntityLinker.#linkedEntities.delete(id);
+      _EntityLinker.#linkedEntityStasis.delete(id);
+    });
+    world2.setDynamicProperty(C.NONPERSISTENTDPNAME, JSON.stringify([]));
+  }
+  static removeLinkedEntityById(ownerId, linkedEntityId) {
+    _EntityLinker.#ownerEntity.delete(linkedEntityId);
+    _EntityLinker.#linkedEntityStasis.delete(linkedEntityId);
+    const linkedEntities = _EntityLinker.#linkedEntities.get(ownerId);
+    if (linkedEntities === void 0) return;
+    const index = linkedEntities.findIndex((e) => e.id === linkedEntityId);
+    if (index === -1) return;
+    linkedEntities.splice(index, 1);
+  }
+  static setLinkedEntityStasis(linkedEntity, isInStasis) {
+    _EntityLinker.#linkedEntityStasis.set(linkedEntity.id, isInStasis);
+  }
+  static getLinkedEntityStasis(linkedEntity) {
+    return _EntityLinker.#linkedEntityStasis.get(linkedEntity.id) ?? false;
+  }
+  static printLinkedEntities() {
+    let output = "All Linked Entities:\n";
+    _EntityLinker.#linkedEntities.forEach((linkedEntities, sourceId) => {
+      output += `Source Entity TypeId: ${world2.getEntity(sourceId)?.typeId}
+`;
+      linkedEntities.forEach((entity) => {
+        output += `  Linked Entity ID: ${entity.id}, Type ID: ${entity.typeId}, Position: ${entity.location.x}, ${entity.location.y}, ${entity.location.z}
+`;
+      });
+    });
+    console.log(output);
+  }
+  static printOwnerEntities() {
+    let output = "All Owner Entities:\n";
+    _EntityLinker.#ownerEntity.forEach((ownerEntity, linkedEntityId) => {
+      output += `Linked Entity ID: ${linkedEntityId}, Owner Entity ID: ${ownerEntity.id}
+`;
+    });
+    console.log(output);
+  }
+};
+
+// ../Regolith/packs/ts-scripts/hitTest.ts
 var HitType = /* @__PURE__ */ ((HitType2) => {
   HitType2[HitType2["Block"] = 0] = "Block";
   HitType2[HitType2["Entity"] = 1] = "Entity";
   HitType2[HitType2["HitDetectEntity"] = 2] = "HitDetectEntity";
   return HitType2;
 })(HitType || {});
-world2.afterEvents.entityHitBlock.subscribe((eventData) => {
+world3.afterEvents.entityHitBlock.subscribe((eventData) => {
   const entity = eventData.damagingEntity;
   if (!(entity instanceof Player3)) return;
-  if (!EntityUtils.getMainhandItemStack(entity)?.typeId.includes("fort:")) return;
-  onHit(0 /* Block */);
+  if (!EntityUtils.getMainhandItemStack(entity)?.typeId.includes(C.NAMESPACE)) return;
+  onHit(entity, 0 /* Block */);
 });
-world2.afterEvents.entityHitEntity.subscribe((eventData) => {
+world3.afterEvents.entityHitEntity.subscribe((eventData) => {
   const entity = eventData.damagingEntity;
   const hitEntity = eventData.hitEntity;
   if (!(entity instanceof Player3)) return;
-  if (!EntityUtils.getMainhandItemStack(entity)?.typeId.includes("fort:")) return;
+  if (!EntityUtils.getMainhandItemStack(entity)?.typeId.includes(C.NAMESPACE)) return;
   if (hitEntity.typeId === C.HITDETECTENTITYNAME) {
-    onHit(2 /* HitDetectEntity */);
+    onHit(entity, 2 /* HitDetectEntity */);
   } else {
-    onHit(1 /* Entity */);
+    onHit(entity, 1 /* Entity */);
   }
 });
-Interval.addInterval(new Interval.MainInterval("interval1", () => {
-  world2.getAllPlayers().forEach((player) => {
+Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
+  world3.getAllPlayers().forEach((player) => {
     let shouldSpawnHitDetectEntity = true;
     const BlockRaycastHit = player.getBlockFromViewDirection({ maxDistance: C.BLOCKPLACERANGE + 2 });
     if (BlockRaycastHit !== void 0) {
@@ -659,23 +801,80 @@ Interval.addInterval(new Interval.MainInterval("interval1", () => {
     }
     const gamemode = player.getGameMode();
     const entityRaycastRange = gamemode === GameMode2.creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
-    if (EntityUtils.getNearbyEntities(player, entityRaycastRange).length > 0) {
+    if (EntityUtils.getValidEntitiesNearby(player, entityRaycastRange).length > 0) {
       const entityRaycastHit = EntityUtils.getValidEntitiesFromRayCast(player, player.getHeadLocation(), player.getViewDirection(), entityRaycastRange);
       if (entityRaycastHit.length > 0) {
         shouldSpawnHitDetectEntity = false;
       }
     }
     if (shouldSpawnHitDetectEntity) {
-      world2.sendMessage("Spawning hit detect entity");
+      if (EntityLinker.getLinkedEntityUsingTypeId(player, C.HITDETECTENTITYNAME) === void 0) {
+        const hitDetectEntity2 = EntityLinker.spawnLinkedEntity(player, C.HITDETECTENTITYNAME, { x: 0, y: 0, z: 2 }, true);
+        initializeHitDetectEntity(hitDetectEntity2);
+      }
+      const hitDetectEntity = EntityLinker.getLinkedEntityUsingTypeId(player, C.HITDETECTENTITYNAME);
+      if (hitDetectEntity !== void 0) {
+        EntityLinker.setLinkedEntityStasis(hitDetectEntity, false);
+      }
+    } else if (!shouldSpawnHitDetectEntity) {
+      const hitDetectEntity = EntityLinker.getLinkedEntityUsingTypeId(player, C.HITDETECTENTITYNAME);
+      if (hitDetectEntity !== void 0) {
+        EntityLinker.setLinkedEntityStasis(hitDetectEntity, true);
+      }
     }
   });
-}, 20));
-function onHit(hitType) {
-  world2.sendMessage(`Hit detected, type: ${HitType[hitType]}`);
+}, 1));
+function onHit(source, hitType) {
+  world3.sendMessage(`Hit detected, type: ${HitType[hitType]}`);
+  world3.playSound("item.trident.throw", source.location, { volume: 1 });
+}
+function initializeHitDetectEntity(entity) {
+  const owner = EntityLinker.getOwnerEntity(entity);
+  if (owner === void 0) return;
+  const intervalId = system3.runInterval(() => {
+    if (!EntityUtils.isAlive(entity)) {
+      system3.clearRun(intervalId);
+      return;
+    }
+    if (!EntityUtils.isAlive(owner)) {
+      system3.clearRun(intervalId);
+      return;
+    }
+    if (!EntityLinker.getLinkedEntityStasis(entity)) {
+      const veloH = { x: owner.getVelocity().x, y: 0, z: owner.getVelocity().z };
+      const ownerSpeedH = Vector3Utils.magnitude(veloH);
+      var tpDistanceH = CustomMathUtils.clamp(ownerSpeedH * 6, 0, 2.4);
+      var tpDistanceV = CustomMathUtils.clamp(owner.getVelocity().y * 2, -2.4, 2.4);
+      const newLocation = EntityUtils.translateFromHeadLocation(owner, { x: 0, y: tpDistanceV, z: tpDistanceH }, true);
+      entity.teleport(newLocation, { dimension: owner.dimension });
+    } else {
+      entity.teleport({ x: owner.location.x, y: owner.location.y + 4, z: owner.location.z }, { dimension: owner.dimension });
+    }
+  });
+}
+world3.afterEvents.entityDie.subscribe((eventData) => {
+  const entity = eventData.deadEntity;
+  if (entity.typeId !== C.HITDETECTENTITYNAME) return;
+  renewHitDetectEntityOnAccidentalKill(entity);
+});
+function renewHitDetectEntityOnAccidentalKill(entity) {
+  const owner = EntityLinker.getOwnerEntity(entity);
+  if (owner === void 0) return;
+  const ownerId = owner.id;
+  const linkedEntityId = entity.id;
+  try {
+    entity.remove();
+  } catch {
+  }
+  EntityLinker.removeLinkedEntityById(ownerId, linkedEntityId);
+  const hitDetectEntity = EntityLinker.spawnLinkedEntity(owner, C.HITDETECTENTITYNAME, { x: 0, y: 0, z: 2 }, true);
+  initializeHitDetectEntity(hitDetectEntity);
+  world3.sendMessage("Renewing hit detect entity on reload");
 }
 
 // ../Regolith/packs/ts-scripts/main.ts
 var slash = new Slash(3, 120, 30, { x: 0, y: 0, z: 2 });
+EntityLinker.removeAllNonPersistentLinkedEntities();
 Interval.start();
 
 //# sourceMappingURL=../debug/main.js.map

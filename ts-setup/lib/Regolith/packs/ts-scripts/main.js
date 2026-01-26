@@ -3,7 +3,9 @@ import { Slash } from "./attacks/slash";
 import { Interval } from "./utils/interval";
 import "./scriptEvents";
 import "./hitTest";
+import { EntityLinker } from "./utils/entityLinker";
 const slash = new Slash(3, 120, 30, { x: 0, y: 0, z: 2 });
+EntityLinker.removeAllNonPersistentLinkedEntities();
 Interval.start();
 function isHitBySlash(playerPos, playerForward, // must be normalized
 targetPos, radius, horizontalAngleDeg, verticalAngleDeg) {

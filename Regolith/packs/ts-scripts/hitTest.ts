@@ -1,8 +1,9 @@
-import { Entity, GameMode, Player, system, world } from "@minecraft/server";
-import { CustomVectorUtils, EntityUtils } from "./utils/utils";
+import { Entity, EntityComponent, EntityComponentTypes, EntityHealthComponent, GameMode, Player, system, world } from "@minecraft/server";
+import { CustomMathUtils, CustomVectorUtils, EntityUtils } from "./utils/utils";
 import { C } from "./constants";
 import { Interval } from "./utils/interval";
 import { Vector3Builder, Vector3Utils } from "./utils/minecraft-math";
+import { EntityLinker } from "./utils/entityLinker";
 
 enum HitType {
     Block,
@@ -15,25 +16,25 @@ world.afterEvents.entityHitBlock.subscribe(eventData => {
     const entity = eventData.damagingEntity;
     //const block = eventData.hitBlock;
     if(!(entity instanceof Player)) return;
-    if(!EntityUtils.getMainhandItemStack(entity)?.typeId.includes("fort:")) return;
-    onHit(HitType.Block);
+    if(!EntityUtils.getMainhandItemStack(entity)?.typeId.includes(C.NAMESPACE)) return;
+    onHit(entity, HitType.Block);
 });
 
 world.afterEvents.entityHitEntity.subscribe(eventData => {
     const entity = eventData.damagingEntity;
     const hitEntity = eventData.hitEntity;
     if(!(entity instanceof Player)) return;
-    if(!EntityUtils.getMainhandItemStack(entity)?.typeId.includes("fort:")) return;
+    if(!EntityUtils.getMainhandItemStack(entity)?.typeId.includes(C.NAMESPACE)) return;
     if(hitEntity.typeId === C.HITDETECTENTITYNAME) {
-        onHit(HitType.HitDetectEntity);
+        onHit(entity, HitType.HitDetectEntity);
     }
     else {
-        onHit(HitType.Entity);
+        onHit(entity, HitType.Entity);
     }
 });
 
 
-Interval.addInterval(new Interval.MainInterval("interval1", () => {
+Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
     world.getAllPlayers().forEach(player => {
         let shouldSpawnHitDetectEntity = true;
 
@@ -50,7 +51,8 @@ Interval.addInterval(new Interval.MainInterval("interval1", () => {
         const gamemode = player.getGameMode();
         const entityRaycastRange = gamemode === GameMode.creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
         //world.sendMessage(`Gamemode: ${gamemode}, Enum: ${GameMode.creative} Entity raycast range: ${entityRaycastRange}`);
-        if(EntityUtils.getNearbyEntities(player, entityRaycastRange).length > 0) {
+            //world.sendMessage(EntityUtils.getValidEntitiesNearby(player, entityRaycastRange).length.toString());
+        if(EntityUtils.getValidEntitiesNearby(player, entityRaycastRange).length > 0) {
             const entityRaycastHit = EntityUtils.getValidEntitiesFromRayCast(player, player.getHeadLocation(), player.getViewDirection(), entityRaycastRange);
             if(entityRaycastHit.length > 0) {
                 shouldSpawnHitDetectEntity = false;
@@ -58,30 +60,74 @@ Interval.addInterval(new Interval.MainInterval("interval1", () => {
         }
 
         if(shouldSpawnHitDetectEntity) {
-            world.sendMessage("Spawning hit detect entity");
+            if(EntityLinker.getLinkedEntityUsingTypeId(player, C.HITDETECTENTITYNAME) === undefined) {
+                //world.sendMessage("Spawning hit detect entity");
+                const hitDetectEntity = EntityLinker.spawnLinkedEntity(player, C.HITDETECTENTITYNAME, {x: 0, y: 0, z: 2}, true);
+                initializeHitDetectEntity(hitDetectEntity);
+            }
+            const hitDetectEntity = EntityLinker.getLinkedEntityUsingTypeId(player, C.HITDETECTENTITYNAME);
+            if(hitDetectEntity !== undefined) {
+                //world.sendMessage("hit detect entity exists, no spawn needed");
+                EntityLinker.setLinkedEntityStasis(hitDetectEntity, false);
+            }
         }
+        else if(!shouldSpawnHitDetectEntity) {
+            //world.sendMessage("setting hit detect entity to stasis");
+            const hitDetectEntity = EntityLinker.getLinkedEntityUsingTypeId(player, C.HITDETECTENTITYNAME);
+            if(hitDetectEntity !== undefined) {
+                EntityLinker.setLinkedEntityStasis(hitDetectEntity, true);
+            }
+        }        
     });
-}, 20));
+}, 1));
 
-function onHit(hitType: HitType) {
+function onHit(source: Entity, hitType: HitType) {
     world.sendMessage(`Hit detected, type: ${HitType[hitType]}`);
+    world.playSound("item.trident.throw", source.location, {volume: 1});
 }
 
-// function cont(entity: Entity) {
-//     //const owning_identifier = getScore(entity, "owning_identifier")??0;
-//     const owner = entity; //stud
-//     //const owner = entity.dimension.getEntities({scoreOptions:[{objective: "identifier", maxScore: owning_identifier, minScore: owning_identifier}]})[0];
-//     if(owner === undefined) return;
-//     system.runInterval(() => {
-//         if(!entity.isValid) { return; }
-//         if(!owner.isValid) { entity.remove(); return; }
+
+
+
+function initializeHitDetectEntity(entity: Entity) {
+    const owner = EntityLinker.getOwnerEntity(entity);
+    if(owner === undefined) return;
+    const intervalId = system.runInterval(() => {
+        if(!EntityUtils.isAlive(entity)) { system.clearRun(intervalId); return; }
+        if(!EntityUtils.isAlive(owner)) { system.clearRun(intervalId); return; }
         
-//         const velo = owner.getVelocity();
-//         const ownerSpeed = Math.sqrt(velo.x**2 + velo.y**2 + velo.z**2);
-//         var tpDistance = 0;
-//         if(ownerSpeed > 0.3) { tpDistance = 2.4; }
-//         else { tpDistance = ownerSpeed*6; }
-//         const newLocation = EntityUtils.translateFromHeadLocation(owner, {x: 0, y: 0, z: tpDistance}, true);
-//         entity.teleport(newLocation, {dimension: owner.dimension});
-//     });
-// }
+        if(!EntityLinker.getLinkedEntityStasis(entity)) {
+            const veloH = {x: owner.getVelocity().x, y: 0, z: owner.getVelocity().z};
+            const ownerSpeedH = Vector3Utils.magnitude(veloH);
+            var tpDistanceH = CustomMathUtils.clamp(ownerSpeedH*6, 0, 2.4);
+            var tpDistanceV = CustomMathUtils.clamp(owner.getVelocity().y*2, -2.4, 2.4);
+            const newLocation = EntityUtils.translateFromHeadLocation(owner, {x: 0, y: tpDistanceV, z: tpDistanceH}, true);
+
+            entity.teleport(newLocation, {dimension: owner.dimension});
+        }
+        else {
+            entity.teleport({x:owner.location.x, y:owner.location.y+4, z:owner.location.z}, {dimension: owner.dimension});
+        }
+    });
+}
+
+
+world.afterEvents.entityDie.subscribe(eventData => {
+    const entity = eventData.deadEntity;
+    if(entity.typeId !== C.HITDETECTENTITYNAME) return;
+    renewHitDetectEntityOnAccidentalKill(entity);
+});
+
+function renewHitDetectEntityOnAccidentalKill(entity: Entity) {
+    const owner = EntityLinker.getOwnerEntity(entity);
+    if(owner === undefined) return;
+    const ownerId = owner.id;
+    const linkedEntityId = entity.id;
+    //system.runTimeout(() => {
+        try {entity.remove();} catch {}
+        EntityLinker.removeLinkedEntityById(ownerId, linkedEntityId);
+        const hitDetectEntity = EntityLinker.spawnLinkedEntity(owner, C.HITDETECTENTITYNAME, {x: 0, y: 0, z: 2}, true);
+        initializeHitDetectEntity(hitDetectEntity);
+    //});
+    world.sendMessage("Renewing hit detect entity on reload");
+}
