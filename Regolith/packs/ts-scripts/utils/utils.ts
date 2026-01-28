@@ -99,11 +99,12 @@ export class EntityUtils {
     return equipmentComp.getEquipment(EquipmentSlot.Mainhand);
   }
 
-  static getValidEntitiesNearby(source: Entity, range: number): Entity[] {
-    const sourcePos = source.location;
+  static getValidEntitiesNearby(source: Entity, maxRange: number, minRange: number = 0, relativeOffset?: Vector3): Entity[] {
+    const sourcePos = relativeOffset ? EntityUtils.translateFromHeadLocation(source, relativeOffset) : source.location;
     const nearbyEntities = source.dimension.getEntities({
       location: sourcePos,
-      maxDistance: range,
+      maxDistance: maxRange,
+      minDistance: minRange,
       excludeFamilies: C.HITEXCLUDEDFAMILIES, 
       excludeTypes: C.HITEXCLUDEDTYPES
     });

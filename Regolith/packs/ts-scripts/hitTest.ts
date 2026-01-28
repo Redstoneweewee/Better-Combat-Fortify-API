@@ -4,6 +4,7 @@ import { C } from "./constants";
 import { Interval } from "./utils/interval";
 import { Vector3Builder, Vector3Utils } from "./utils/minecraft-math";
 import { EntityLinker } from "./utils/entityLinker";
+import { WeaponRegistry } from "./weapons/weaponRegistry";
 
 enum HitType {
     Block,
@@ -16,15 +17,15 @@ world.afterEvents.entityHitBlock.subscribe(eventData => {
     const entity = eventData.damagingEntity;
     //const block = eventData.hitBlock;
     if(!(entity instanceof Player)) return;
-    if(!EntityUtils.getMainhandItemStack(entity)?.typeId.includes(C.NAMESPACE)) return;
+    if(!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
     onHit(entity, HitType.Block);
 });
 
+/**Tests for non-players as well */
 world.afterEvents.entityHitEntity.subscribe(eventData => {
     const entity = eventData.damagingEntity;
     const hitEntity = eventData.hitEntity;
-    if(!(entity instanceof Player)) return;
-    if(!EntityUtils.getMainhandItemStack(entity)?.typeId.includes(C.NAMESPACE)) return;
+    if(!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
     if(hitEntity.typeId === C.HITDETECTENTITYNAME) {
         onHit(entity, HitType.HitDetectEntity);
     }
@@ -81,12 +82,6 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
     });
 }, 1));
 
-function onHit(source: Entity, hitType: HitType) {
-    world.sendMessage(`Hit detected, type: ${HitType[hitType]}`);
-    world.playSound("item.trident.throw", source.location, {volume: 1});
-}
-
-
 
 
 function initializeHitDetectEntity(entity: Entity) {
@@ -131,3 +126,26 @@ function renewHitDetectEntityOnAccidentalKill(entity: Entity) {
     //});
     world.sendMessage("Renewing hit detect entity on reload");
 }
+
+
+
+function onHit(entity: Entity, hitType: HitType) {
+    //world.sendMessage(`Hit detected, type: ${HitType[hitType]}`);
+    const mainhandItemStack = EntityUtils.getMainhandItemStack(entity);
+    if(mainhandItemStack === undefined) return;
+    if(!WeaponRegistry.isWeapon(mainhandItemStack)) return;
+    const weaponObj = WeaponRegistry.getWeapon(mainhandItemStack.typeId);
+    if(!weaponObj) return;
+
+    const result = weaponObj.tryExecuteAttack(entity, true);
+    if(result.executed) {
+        world.playSound("item.trident.throw", entity.getHeadLocation(), {volume: 1});
+    }
+    if(!result.hit && result.cooldownTime !== undefined) {
+        world.sendMessage(`Weapon on cooldown, time left: ${result.cooldownTime} ticks`);
+    }
+    else {
+        world.sendMessage(`Attack missed!`);
+    }
+}
+

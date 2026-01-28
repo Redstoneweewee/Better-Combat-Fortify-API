@@ -60,6 +60,10 @@
                         "speed": 15
                     }
                 ]
+            },
+            "minecraft:cooldown": {
+                "category": "fort:custom_sword_1",
+                "duration": 0.0
             }
         }
     }

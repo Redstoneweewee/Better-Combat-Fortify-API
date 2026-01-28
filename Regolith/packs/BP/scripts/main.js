@@ -1,3 +1,219 @@
+// ../Regolith/packs/ts-scripts/utils/interval.ts
+import { system } from "@minecraft/server";
+var Interval;
+((Interval2) => {
+  class MainInterval {
+    name;
+    function;
+    tickInterval;
+    initialTimeout = 0;
+    startTick;
+    constructor(name, func, tickInterval, initialTimeout = 0) {
+      this.name = name;
+      this.function = func;
+      this.tickInterval = tickInterval;
+      this.initialTimeout = initialTimeout;
+      this.startTick = system.currentTick + this.initialTimeout;
+    }
+  }
+  Interval2.MainInterval = MainInterval;
+  let ArrayPlacement;
+  ((ArrayPlacement2) => {
+    ArrayPlacement2[ArrayPlacement2["Before"] = 0] = "Before";
+    ArrayPlacement2[ArrayPlacement2["After"] = 1] = "After";
+  })(ArrayPlacement = Interval2.ArrayPlacement || (Interval2.ArrayPlacement = {}));
+  const intervals = [];
+  function addInterval(interval, placement = { placement: 1 /* After */ }) {
+    if (placement.relativeToIntervalName === void 0) {
+      if (placement.placement === 1 /* After */) {
+        intervals.push(interval);
+      } else {
+        intervals.unshift(interval);
+      }
+    } else {
+      const index = intervals.findIndex((i) => i.name === placement.relativeToIntervalName);
+      if (index === -1) {
+        console.warn(`Interval with name ${placement.relativeToIntervalName} not found. Adding to end of intervals array.`);
+        intervals.push(interval);
+      } else {
+        intervals.splice(index, 0, interval);
+      }
+    }
+  }
+  Interval2.addInterval = addInterval;
+  let started = false;
+  function start() {
+    if (started) return;
+    started = true;
+    system.runInterval(() => {
+      const currentTick = system.currentTick;
+      intervals.forEach((interval) => {
+        if (currentTick >= interval.startTick && (currentTick - interval.startTick) % interval.tickInterval === 0) {
+          interval.function();
+        }
+      });
+    }, 1);
+  }
+  Interval2.start = start;
+})(Interval || (Interval = {}));
+
+// ../Regolith/packs/ts-scripts/scriptEvents.ts
+import { system as system2, world } from "@minecraft/server";
+system2.afterEvents.scriptEventReceive.subscribe((eventData) => {
+  const id = eventData.id;
+  const message = eventData.message;
+  if (id === "fort:transform_offset") {
+    const lowerCase = message.toLowerCase();
+    const type1 = lowerCase[0];
+    const direction = lowerCase[1];
+    const type2 = lowerCase[2];
+    let amount = Number(lowerCase.match(/\d+/) ?? [][0]);
+    if (type2 === "-") {
+      amount = -1 * amount;
+    }
+    if (lowerCase === "toggle") {
+      const value = !Boolean(world.getDynamicProperty("fort:transform_offset_apply_to_players"));
+      world.setDynamicProperty("fort:transform_offset_apply_to_players", value);
+      if (!value) {
+        world.sendMessage("Transform Offsets Apply to armor stands");
+      } else {
+        world.sendMessage("Transform Offsets Apply to players only");
+      }
+      return;
+    } else if (lowerCase.includes("mul")) {
+      world.setDynamicProperty("fort:transform_offset_multiply", amount > 0 ? amount : 1);
+      world.sendMessage(`Set Transform Offset Multiply to ${amount > 0 ? amount : 1}`);
+      return;
+    }
+    if (world.getDynamicProperty("fort:transform_offset_apply_to_players")) {
+      world.getAllPlayers().forEach((player) => {
+        offset(player, lowerCase, type1, direction, type2, amount);
+      });
+    } else {
+      world.getAllPlayers().forEach((player) => {
+        const entities = player?.dimension.getEntities({
+          type: "minecraft:armor_stand",
+          location: player?.location,
+          maxDistance: 15
+        });
+        entities.forEach((entity) => {
+          offset(entity, lowerCase, type1, direction, type2, amount);
+        });
+      });
+    }
+  }
+});
+function offset(entity, lowerCase, type1, direction, type2, amount) {
+  const mult = Number(world.getDynamicProperty("fort:transform_offset_multiply")) ?? 1;
+  if (lowerCase === "read") {
+    const offsets = {
+      rx: 0,
+      ry: 0,
+      rz: 0,
+      tx: 0,
+      ty: 0,
+      tz: 0,
+      sc: 0
+    };
+    offsets.rx = Number(entity.getProperty("fort:rotation_offset_x"));
+    offsets.ry = Number(entity.getProperty("fort:rotation_offset_y"));
+    offsets.rz = Number(entity.getProperty("fort:rotation_offset_z"));
+    offsets.tx = Number(entity.getProperty("fort:transform_offset_x"));
+    offsets.ty = Number(entity.getProperty("fort:transform_offset_y"));
+    offsets.tz = Number(entity.getProperty("fort:transform_offset_z"));
+    offsets.sc = Number(entity.getProperty("fort:scale_offset"));
+    const message = `rotation offset x:  ${offsets.rx}
+rotation offset y:  ${offsets.ry}
+rotation offset z:  ${offsets.rz}
+transform offset x: ${offsets.tx}
+transform offset y: ${offsets.ty}
+transform offset z: ${offsets.tz}
+scale offset:       ${offsets.sc}`;
+    world.sendMessage(message);
+  }
+  if (type1 === "s" && direction === "c") {
+    const oldAmount = Number(entity.getProperty("fort:scale_offset"));
+    if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+      return;
+    }
+    entity.setProperty("fort:scale_offset", oldAmount + amount * mult);
+    world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${type1 + direction}, type: ${type2}, amount: ${amount}`);
+  } else if (type2 !== "s") {
+    if (type1 === "r" && direction === "x") {
+      const oldAmount = Number(entity.getProperty("fort:rotation_offset_x"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("fort:rotation_offset_x", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "r" && direction === "y") {
+      const oldAmount = Number(entity.getProperty("fort:rotation_offset_y"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("fort:rotation_offset_y", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "r" && direction === "z") {
+      const oldAmount = Number(entity.getProperty("fort:rotation_offset_z"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("fort:rotation_offset_z", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "x") {
+      const oldAmount = Number(entity.getProperty("fort:transform_offset_x"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("fort:transform_offset_x", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "y") {
+      const oldAmount = Number(entity.getProperty("fort:transform_offset_y"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("fort:transform_offset_y", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "z") {
+      const oldAmount = Number(entity.getProperty("fort:transform_offset_z"));
+      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
+        return;
+      }
+      entity.setProperty("fort:transform_offset_z", oldAmount + amount * mult);
+      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    }
+  } else {
+    if (type1 === "r" && direction === "x") {
+      entity.setProperty("fort:rotation_offset_x", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "r" && direction === "y") {
+      entity.setProperty("fort:rotation_offset_y", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "r" && direction === "z") {
+      entity.setProperty("fort:rotation_offset_z", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "x") {
+      entity.setProperty("fort:transform_offset_x", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "y") {
+      entity.setProperty("fort:transform_offset_y", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "t" && direction === "z") {
+      entity.setProperty("fort:transform_offset_z", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
+    } else if (type1 === "s" && direction === "c") {
+      entity.setProperty("fort:scale_offset", amount);
+      world.sendMessage(`set to newAmount: ${amount}, direction: ${type1 + direction}, type: ${type2}, amount: ${amount}`);
+    }
+  }
+}
+
+// ../Regolith/packs/ts-scripts/hitTest.ts
+import { GameMode as GameMode2, Player as Player3, system as system3, world as world3 } from "@minecraft/server";
+
+// ../Regolith/packs/ts-scripts/utils/utils.ts
+import { EntityComponentTypes, EntityEquippableComponent, EntityHealthComponent, EquipmentSlot, Player as Player2 } from "@minecraft/server";
+
 // ../Regolith/packs/ts-scripts/utils/minecraft-math.js
 import { BlockVolume } from "@minecraft/server";
 function clampNumber(val, min, max) {
@@ -213,9 +429,6 @@ var Vector3Utils = class _Vector3Utils {
   }
 };
 
-// ../Regolith/packs/ts-scripts/utils/utils.ts
-import { EntityComponentTypes, EntityEquippableComponent, EntityHealthComponent, EquipmentSlot, Player } from "@minecraft/server";
-
 // ../Regolith/packs/ts-scripts/constants.ts
 import { GameMode } from "@minecraft/server";
 var C = class {
@@ -254,6 +467,8 @@ var C = class {
   static BLOCKPLACERANGE = 5.2;
   static CREATIVEHITRANGE = 6;
   static SURVIVALHITRANGE = 3.3;
+  static RESETCOMBOTICKS = 40;
+  //ticks to reset combo attack index
 };
 
 // ../Regolith/packs/ts-scripts/utils/utils.ts
@@ -288,7 +503,7 @@ var CustomVectorUtils = class {
     };
   }
 };
-var EntityUtils = class {
+var EntityUtils = class _EntityUtils {
   static isAlive(entity) {
     const healthComp = entity.getComponent(EntityComponentTypes.Health);
     if (healthComp === void 0 || !(healthComp instanceof EntityHealthComponent)) return false;
@@ -318,17 +533,18 @@ var EntityUtils = class {
     if (!(equipmentComp instanceof EntityEquippableComponent)) return void 0;
     return equipmentComp.getEquipment(EquipmentSlot.Mainhand);
   }
-  static getValidEntitiesNearby(source, range) {
-    const sourcePos = source.location;
+  static getValidEntitiesNearby(source, maxRange, minRange = 0, relativeOffset) {
+    const sourcePos = relativeOffset ? _EntityUtils.translateFromHeadLocation(source, relativeOffset) : source.location;
     const nearbyEntities = source.dimension.getEntities({
       location: sourcePos,
-      maxDistance: range,
+      maxDistance: maxRange,
+      minDistance: minRange,
       excludeFamilies: C.HITEXCLUDEDFAMILIES,
       excludeTypes: C.HITEXCLUDEDTYPES
     });
     let output = [];
     for (const entity of nearbyEntities) {
-      if (entity instanceof Player && C.HITEXCLUDEDGAMEMODES.includes(entity.getGameMode())) continue;
+      if (entity instanceof Player2 && C.HITEXCLUDEDGAMEMODES.includes(entity.getGameMode())) continue;
       if (entity === source) continue;
       output.push(entity);
     }
@@ -345,7 +561,7 @@ var EntityUtils = class {
     });
     let output = [];
     entityRaycastHit.forEach((hit) => {
-      if (hit.entity instanceof Player && C.HITEXCLUDEDGAMEMODES.includes(hit.entity.getGameMode())) return;
+      if (hit.entity instanceof Player2 && C.HITEXCLUDEDGAMEMODES.includes(hit.entity.getGameMode())) return;
       if (hit.entity !== source) {
         output.push(hit);
       }
@@ -389,272 +605,6 @@ var DrawEffects = class {
     }
   }
 };
-
-// ../Regolith/packs/ts-scripts/attacks/slash.ts
-var Slash = class {
-  attackRadius;
-  totalHorizontalAngleDeg;
-  totalVerticalAngleDeg;
-  /** Offset from the attack position `{x: left-right, y: up-down, z: forward-backward}`*/
-  attackOffset;
-  constructor(attackRadius, totalHorizontalAngleDeg, totalVerticalAngleDeg, attackOffset) {
-    this.attackRadius = attackRadius;
-    this.totalHorizontalAngleDeg = totalHorizontalAngleDeg;
-    this.totalVerticalAngleDeg = totalVerticalAngleDeg;
-    this.attackOffset = attackOffset ? attackOffset : { x: 0, y: 0, z: 0 };
-  }
-  drawSlashEffect(dimension, pos, forward, numOfParticles) {
-    const halfH = this.totalHorizontalAngleDeg * Math.PI / 360;
-    const halfV = this.totalVerticalAngleDeg * Math.PI / 360;
-    const basis = CustomVectorUtils.createBasisFromForward(forward);
-    const right = basis.right, up = basis.up;
-    const worldOffset = Vector3Utils.add(
-      Vector3Utils.add(
-        Vector3Utils.scale(right, this.attackOffset.x),
-        Vector3Utils.scale(up, this.attackOffset.y)
-      ),
-      Vector3Utils.scale(forward, this.attackOffset.z)
-    );
-    pos = Vector3Utils.add(pos, worldOffset);
-    const particlesNum = numOfParticles ? numOfParticles : 3 * this.attackRadius;
-    const leftVector = CustomVectorUtils.rotateAroundAxis(forward, up, halfH);
-    const rightVector = CustomVectorUtils.rotateAroundAxis(forward, up, -halfH);
-    const leftUpVector = CustomVectorUtils.rotateAroundAxis(CustomVectorUtils.rotateAroundAxis(forward, up, halfH), right, halfV);
-    const leftDownVector = CustomVectorUtils.rotateAroundAxis(CustomVectorUtils.rotateAroundAxis(forward, up, halfH), right, -halfV);
-    const rightUpVector = CustomVectorUtils.rotateAroundAxis(CustomVectorUtils.rotateAroundAxis(forward, up, -halfH), right, halfV);
-    const rightDownVector = CustomVectorUtils.rotateAroundAxis(CustomVectorUtils.rotateAroundAxis(forward, up, -halfH), right, -halfV);
-    DrawEffects.drawRay(dimension, pos, leftUpVector, this.attackRadius, particlesNum);
-    DrawEffects.drawRay(dimension, pos, leftDownVector, this.attackRadius, particlesNum);
-    DrawEffects.drawRay(dimension, pos, rightUpVector, this.attackRadius, particlesNum);
-    DrawEffects.drawRay(dimension, pos, rightDownVector, this.attackRadius, particlesNum);
-    DrawEffects.drawArc(dimension, pos, forward, this.attackRadius, [{ rotAxis: up, angleDeg: halfH }], particlesNum);
-    DrawEffects.drawArc(dimension, pos, forward, this.attackRadius, [{ rotAxis: right, angleDeg: halfV }], particlesNum);
-    DrawEffects.drawArc(dimension, pos, forward, this.attackRadius, [{ rotAxis: up, angleDeg: halfH }, { rotAxis: right, angleDeg: -halfV }], particlesNum);
-    DrawEffects.drawArc(dimension, pos, forward, this.attackRadius, [{ rotAxis: up, angleDeg: halfH }, { rotAxis: right, angleDeg: halfV }], particlesNum);
-    DrawEffects.drawArc(dimension, pos, leftVector, this.attackRadius, [{ rotAxis: right, angleDeg: -halfV }], particlesNum);
-    DrawEffects.drawArc(dimension, pos, rightVector, this.attackRadius, [{ rotAxis: right, angleDeg: halfV }], particlesNum);
-  }
-};
-var SlashAttacks = {
-  QuickSlash: new Slash(3, 120, 30),
-  WideSlash: new Slash(4, 180, 45),
-  Overhead: new Slash(3.5, 90, 60),
-  Spin: new Slash(3.5, 360, 60),
-  Thrust: new Slash(2, 30, 20)
-};
-
-// ../Regolith/packs/ts-scripts/utils/interval.ts
-import { system } from "@minecraft/server";
-var Interval;
-((Interval2) => {
-  class MainInterval {
-    name;
-    function;
-    tickInterval;
-    initialTimeout = 0;
-    startTick;
-    constructor(name, func, tickInterval, initialTimeout = 0) {
-      this.name = name;
-      this.function = func;
-      this.tickInterval = tickInterval;
-      this.initialTimeout = initialTimeout;
-      this.startTick = system.currentTick + this.initialTimeout;
-    }
-  }
-  Interval2.MainInterval = MainInterval;
-  let ArrayPlacement;
-  ((ArrayPlacement2) => {
-    ArrayPlacement2[ArrayPlacement2["Before"] = 0] = "Before";
-    ArrayPlacement2[ArrayPlacement2["After"] = 1] = "After";
-  })(ArrayPlacement = Interval2.ArrayPlacement || (Interval2.ArrayPlacement = {}));
-  const intervals = [];
-  function addInterval(interval, placement = { placement: 1 /* After */ }) {
-    if (placement.relativeToIntervalName === void 0) {
-      if (placement.placement === 1 /* After */) {
-        intervals.push(interval);
-      } else {
-        intervals.unshift(interval);
-      }
-    } else {
-      const index = intervals.findIndex((i) => i.name === placement.relativeToIntervalName);
-      if (index === -1) {
-        console.warn(`Interval with name ${placement.relativeToIntervalName} not found. Adding to end of intervals array.`);
-        intervals.push(interval);
-      } else {
-        intervals.splice(index, 0, interval);
-      }
-    }
-  }
-  Interval2.addInterval = addInterval;
-  let started = false;
-  function start() {
-    if (started) return;
-    started = true;
-    system.runInterval(() => {
-      const currentTick = system.currentTick;
-      intervals.forEach((interval) => {
-        if (currentTick >= interval.startTick && (currentTick - interval.startTick) % interval.tickInterval === 0) {
-          interval.function();
-        }
-      });
-    }, 1);
-  }
-  Interval2.start = start;
-})(Interval || (Interval = {}));
-
-// ../Regolith/packs/ts-scripts/scriptEvents.ts
-import { system as system2, world } from "@minecraft/server";
-system2.afterEvents.scriptEventReceive.subscribe((eventData) => {
-  const id = eventData.id;
-  const message = eventData.message;
-  if (id === "fort:transform_offset") {
-    const lowerCase = message.toLowerCase();
-    const type1 = lowerCase[0];
-    const direction = lowerCase[1];
-    const type2 = lowerCase[2];
-    let amount = Number(lowerCase.match(/\d+/) ?? [][0]);
-    if (type2 === "-") {
-      amount = -1 * amount;
-    }
-    if (lowerCase === "toggle") {
-      const value = !Boolean(world.getDynamicProperty("fort:transform_offset_apply_to_players"));
-      world.setDynamicProperty("fort:transform_offset_apply_to_players", value);
-      if (!value) {
-        world.sendMessage("Transform Offsets Apply to armor stands");
-      } else {
-        world.sendMessage("Transform Offsets Apply to players only");
-      }
-      return;
-    } else if (lowerCase.includes("mul")) {
-      world.setDynamicProperty("fort:transform_offset_multiply", amount > 0 ? amount : 1);
-      world.sendMessage(`Set Transform Offset Multiply to ${amount > 0 ? amount : 1}`);
-      return;
-    }
-    if (world.getDynamicProperty("fort:transform_offset_apply_to_players")) {
-      world.getAllPlayers().forEach((player) => {
-        offset(player, lowerCase, type1, direction, type2, amount);
-      });
-    } else {
-      world.getAllPlayers().forEach((player) => {
-        const entities = player?.dimension.getEntities({
-          type: "minecraft:armor_stand",
-          location: player?.location,
-          maxDistance: 15
-        });
-        entities.forEach((entity) => {
-          offset(entity, lowerCase, type1, direction, type2, amount);
-        });
-      });
-    }
-  }
-});
-function offset(entity, lowerCase, type1, direction, type2, amount) {
-  const mult = Number(world.getDynamicProperty("fort:transform_offset_multiply")) ?? 1;
-  if (lowerCase === "read") {
-    const offsets = {
-      rx: 0,
-      ry: 0,
-      rz: 0,
-      tx: 0,
-      ty: 0,
-      tz: 0,
-      sc: 0
-    };
-    offsets.rx = Number(entity.getProperty("fort:rotation_offset_x"));
-    offsets.ry = Number(entity.getProperty("fort:rotation_offset_y"));
-    offsets.rz = Number(entity.getProperty("fort:rotation_offset_z"));
-    offsets.tx = Number(entity.getProperty("fort:transform_offset_x"));
-    offsets.ty = Number(entity.getProperty("fort:transform_offset_y"));
-    offsets.tz = Number(entity.getProperty("fort:transform_offset_z"));
-    offsets.sc = Number(entity.getProperty("fort:scale_offset"));
-    const message = `rotation offset x:  ${offsets.rx}
-rotation offset y:  ${offsets.ry}
-rotation offset z:  ${offsets.rz}
-transform offset x: ${offsets.tx}
-transform offset y: ${offsets.ty}
-transform offset z: ${offsets.tz}
-scale offset:       ${offsets.sc}`;
-    world.sendMessage(message);
-  }
-  if (type1 === "s" && direction === "c") {
-    const oldAmount = Number(entity.getProperty("fort:scale_offset"));
-    if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
-      return;
-    }
-    entity.setProperty("fort:scale_offset", oldAmount + amount * mult);
-    world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${type1 + direction}, type: ${type2}, amount: ${amount}`);
-  } else if (type2 !== "s") {
-    if (type1 === "r" && direction === "x") {
-      const oldAmount = Number(entity.getProperty("fort:rotation_offset_x"));
-      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
-        return;
-      }
-      entity.setProperty("fort:rotation_offset_x", oldAmount + amount * mult);
-      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "r" && direction === "y") {
-      const oldAmount = Number(entity.getProperty("fort:rotation_offset_y"));
-      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
-        return;
-      }
-      entity.setProperty("fort:rotation_offset_y", oldAmount + amount * mult);
-      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "r" && direction === "z") {
-      const oldAmount = Number(entity.getProperty("fort:rotation_offset_z"));
-      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
-        return;
-      }
-      entity.setProperty("fort:rotation_offset_z", oldAmount + amount * mult);
-      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "t" && direction === "x") {
-      const oldAmount = Number(entity.getProperty("fort:transform_offset_x"));
-      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
-        return;
-      }
-      entity.setProperty("fort:transform_offset_x", oldAmount + amount * mult);
-      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "t" && direction === "y") {
-      const oldAmount = Number(entity.getProperty("fort:transform_offset_y"));
-      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
-        return;
-      }
-      entity.setProperty("fort:transform_offset_y", oldAmount + amount * mult);
-      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "t" && direction === "z") {
-      const oldAmount = Number(entity.getProperty("fort:transform_offset_z"));
-      if (oldAmount === null || oldAmount === void 0 || Number.isNaN(oldAmount)) {
-        return;
-      }
-      entity.setProperty("fort:transform_offset_z", oldAmount + amount * mult);
-      world.sendMessage(`oldAmount: ${oldAmount}, newAmount: ${oldAmount + amount * mult}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    }
-  } else {
-    if (type1 === "r" && direction === "x") {
-      entity.setProperty("fort:rotation_offset_x", amount);
-      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "r" && direction === "y") {
-      entity.setProperty("fort:rotation_offset_y", amount);
-      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "r" && direction === "z") {
-      entity.setProperty("fort:rotation_offset_z", amount);
-      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "t" && direction === "x") {
-      entity.setProperty("fort:transform_offset_x", amount);
-      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "t" && direction === "y") {
-      entity.setProperty("fort:transform_offset_y", amount);
-      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "t" && direction === "z") {
-      entity.setProperty("fort:transform_offset_z", amount);
-      world.sendMessage(`set to newAmount: ${amount}, direction: ${direction}, type: ${type2}, amount: ${amount}`);
-    } else if (type1 === "s" && direction === "c") {
-      entity.setProperty("fort:scale_offset", amount);
-      world.sendMessage(`set to newAmount: ${amount}, direction: ${type1 + direction}, type: ${type2}, amount: ${amount}`);
-    }
-  }
-}
-
-// ../Regolith/packs/ts-scripts/hitTest.ts
-import { GameMode as GameMode2, Player as Player3, system as system3, world as world3 } from "@minecraft/server";
 
 // ../Regolith/packs/ts-scripts/utils/entityLinker.ts
 import { world as world2 } from "@minecraft/server";
@@ -763,24 +713,53 @@ var EntityLinker = class _EntityLinker {
   }
 };
 
+// ../Regolith/packs/ts-scripts/weapons/weaponRegistry.ts
+var WeaponRegistry = class {
+  static weapons = /* @__PURE__ */ new Map();
+  /**
+   * Register a weapon
+   */
+  static register(weapon) {
+    this.weapons.set(weapon.itemTypeId, weapon);
+  }
+  /**
+   * Get a weapon by item type ID
+   */
+  static getWeapon(itemTypeId) {
+    return this.weapons.get(itemTypeId);
+  }
+  /**
+   * Get a weapon from an item stack
+   */
+  static getWeaponFromItem(item) {
+    return this.weapons.get(item.typeId);
+  }
+  /**
+   * Check if an item is a registered weapon
+   */
+  static isWeapon(itemStack) {
+    if (itemStack === void 0) return false;
+    return this.weapons.has(itemStack.typeId);
+  }
+  /**
+   * Get all registered weapons
+   */
+  static getAllWeapons() {
+    return Array.from(this.weapons.values());
+  }
+};
+
 // ../Regolith/packs/ts-scripts/hitTest.ts
-var HitType = /* @__PURE__ */ ((HitType2) => {
-  HitType2[HitType2["Block"] = 0] = "Block";
-  HitType2[HitType2["Entity"] = 1] = "Entity";
-  HitType2[HitType2["HitDetectEntity"] = 2] = "HitDetectEntity";
-  return HitType2;
-})(HitType || {});
 world3.afterEvents.entityHitBlock.subscribe((eventData) => {
   const entity = eventData.damagingEntity;
   if (!(entity instanceof Player3)) return;
-  if (!EntityUtils.getMainhandItemStack(entity)?.typeId.includes(C.NAMESPACE)) return;
+  if (!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
   onHit(entity, 0 /* Block */);
 });
 world3.afterEvents.entityHitEntity.subscribe((eventData) => {
   const entity = eventData.damagingEntity;
   const hitEntity = eventData.hitEntity;
-  if (!(entity instanceof Player3)) return;
-  if (!EntityUtils.getMainhandItemStack(entity)?.typeId.includes(C.NAMESPACE)) return;
+  if (!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
   if (hitEntity.typeId === C.HITDETECTENTITYNAME) {
     onHit(entity, 2 /* HitDetectEntity */);
   } else {
@@ -824,10 +803,6 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
     }
   });
 }, 1));
-function onHit(source, hitType) {
-  world3.sendMessage(`Hit detected, type: ${HitType[hitType]}`);
-  world3.playSound("item.trident.throw", source.location, { volume: 1 });
-}
 function initializeHitDetectEntity(entity) {
   const owner = EntityLinker.getOwnerEntity(entity);
   if (owner === void 0) return;
@@ -871,9 +846,340 @@ function renewHitDetectEntityOnAccidentalKill(entity) {
   initializeHitDetectEntity(hitDetectEntity);
   world3.sendMessage("Renewing hit detect entity on reload");
 }
+function onHit(entity, hitType) {
+  const mainhandItemStack = EntityUtils.getMainhandItemStack(entity);
+  if (mainhandItemStack === void 0) return;
+  if (!WeaponRegistry.isWeapon(mainhandItemStack)) return;
+  const weaponObj = WeaponRegistry.getWeapon(mainhandItemStack.typeId);
+  if (!weaponObj) return;
+  const result = weaponObj.tryExecuteAttack(entity, true);
+  if (result.executed) {
+    world3.playSound("item.trident.throw", entity.getHeadLocation(), { volume: 1 });
+  }
+  if (!result.hit && result.cooldownTime !== void 0) {
+    world3.sendMessage(`Weapon on cooldown, time left: ${result.cooldownTime} ticks`);
+  } else {
+    world3.sendMessage(`Attack missed!`);
+  }
+}
+
+// ../Regolith/packs/ts-scripts/weapons/weapons.ts
+import { Player as Player4, system as system4 } from "@minecraft/server";
+var WeaponCooldown = class {
+  currentTick;
+  cooldownAmount;
+  constructor(currentTick, cooldownAmount) {
+    this.currentTick = currentTick;
+    this.cooldownAmount = cooldownAmount;
+  }
+  isOnCooldown() {
+    return this.currentTick + this.cooldownAmount >= system4.currentTick;
+  }
+  getCooldownTime() {
+    const timeLeft = this.currentTick + this.cooldownAmount - system4.currentTick;
+    return timeLeft > 0 ? timeLeft : 0;
+  }
+  setNewCooldown(cooldownAmount) {
+    this.currentTick = system4.currentTick;
+    this.cooldownAmount = cooldownAmount;
+  }
+};
+var MeleeWeapon = class {
+  itemTypeId;
+  attacks;
+  currentAttackIndex = 0;
+  weaponCooldown = new WeaponCooldown(0, 0);
+  resetAttackIndexIntervalId = void 0;
+  constructor(itemTypeId) {
+    this.itemTypeId = itemTypeId;
+    this.attacks = [];
+  }
+  /**
+   * Add an attack configuration to this weapon
+   * @param name - Unique identifier for this attack (e.g., "light_attack", "heavy_attack")
+   * @param config - Attack configuration
+   */
+  addAttack(config) {
+    this.attacks.push(config);
+    return this;
+  }
+  /**
+   * Get the current attack
+   */
+  getCurrentAttack() {
+    return this.attacks[this.currentAttackIndex];
+  }
+  /**
+   * Execute an attack if not on cooldown
+   * @param attacker - Entity performing the attack
+   * @param target - Target entity
+   * @returns Whether the attack hit
+   */
+  tryExecuteAttack(attacker, drawEffect) {
+    if (this.weaponCooldown.isOnCooldown()) return { executed: false, hit: false, effectDrawn: false, cooldownTime: this.weaponCooldown.getCooldownTime() };
+    let hit = false;
+    const attackConfig = this.getCurrentAttack();
+    if (!attackConfig) {
+      console.warn("No attack configuration found for weapon:", this.itemTypeId);
+      return { executed: false, hit: false, effectDrawn: false };
+    }
+    const possibleTargets = EntityUtils.getValidEntitiesNearby(attacker, attackConfig.attack.maxRange, attackConfig.attack.minRange, attackConfig.attack.attackOffset);
+    for (const target of possibleTargets) {
+      if (attackConfig.attack.isHit(attacker.getHeadLocation(), attacker.getViewDirection(), { x: target.getHeadLocation().x, y: (target.getHeadLocation().y + target.location.y) / 2, z: target.getHeadLocation().z })) {
+        target.applyDamage(attackConfig.damage, { cause: attackConfig.attack.attackType, damagingEntity: attacker });
+        hit = true;
+      }
+    }
+    if (drawEffect) this.drawAttackEffect(attacker);
+    this.weaponCooldown.setNewCooldown(attackConfig.attack.cooldown);
+    if (attacker instanceof Player4) attacker.startItemCooldown(this.itemTypeId, attackConfig.attack.cooldown);
+    this.incrementAttackIndex();
+    if (this.resetAttackIndexIntervalId !== void 0) system4.clearRun(this.resetAttackIndexIntervalId);
+    this.resetAttackIndexIntervalId = system4.runTimeout(() => {
+      this.resetAttackIndex();
+    }, C.RESETCOMBOTICKS);
+    return { executed: true, hit, effectDrawn: drawEffect };
+  }
+  incrementAttackIndex() {
+    this.currentAttackIndex = (this.currentAttackIndex + 1) % this.attacks.length;
+  }
+  resetAttackIndex() {
+    this.currentAttackIndex = 0;
+  }
+  /**
+   * Draw attack effects if not on cooldown
+   * @param attacker - Entity performing the attack
+   */
+  drawAttackEffect(attacker) {
+    const attackConfig = this.getCurrentAttack();
+    if (!attackConfig || !attackConfig.attack.drawEffect) return;
+    const dimension = attacker.dimension;
+    const pos = attacker.getHeadLocation();
+    const forward = attacker.getViewDirection();
+    attackConfig.attack.drawEffect(dimension, pos, forward);
+  }
+};
+
+// ../Regolith/packs/ts-scripts/attacks/slash.ts
+import { EntityDamageCause as EntityDamageCause2, world as world4 } from "@minecraft/server";
+var Slash = class {
+  minRange;
+  maxRange;
+  cooldown;
+  totalHorizontalAngleDeg;
+  totalVerticalAngleDeg;
+  /** Offset from the attack position `{x: left-right, y: up-down, z: forward-backward}`*/
+  attackOffset;
+  attackType;
+  constructor(maxRange, minRange, cooldown, totalHorizontalAngleDeg, totalVerticalAngleDeg, attackOffset, attackType) {
+    this.maxRange = maxRange;
+    this.minRange = minRange;
+    this.cooldown = cooldown;
+    this.totalHorizontalAngleDeg = totalHorizontalAngleDeg;
+    this.totalVerticalAngleDeg = totalVerticalAngleDeg;
+    this.attackOffset = attackOffset ? attackOffset : { x: 0, y: 0, z: 0 };
+    this.attackType = attackType ? attackType : EntityDamageCause2.entityAttack;
+  }
+  isHit(playerPos, playerForward, targetPos) {
+    const basis = CustomVectorUtils.createBasisFromForward(playerForward);
+    const origin = CustomVectorUtils.translateRelativeToBasis(
+      playerPos,
+      basis,
+      this.attackOffset
+    );
+    const D = Vector3Utils.subtract(targetPos, origin);
+    const dist = Vector3Utils.magnitude(D);
+    if (dist > this.maxRange || dist < this.minRange) return false;
+    const halfH = this.totalHorizontalAngleDeg * Math.PI / 360;
+    const halfV = this.totalVerticalAngleDeg * Math.PI / 360;
+    const DNorm = Vector3Utils.normalize(D);
+    const horizontalDot = Vector3Utils.dot(DNorm, basis.right);
+    const verticalDot = Vector3Utils.dot(DNorm, basis.up);
+    const forwardDot = Vector3Utils.dot(DNorm, basis.forward);
+    const horizontalAngle = Math.atan2(horizontalDot, forwardDot);
+    const verticalAngle = Math.atan2(verticalDot, Math.sqrt(forwardDot * forwardDot + horizontalDot * horizontalDot));
+    world4.sendMessage(`Horizontal Angle: ${(horizontalAngle * 180 / Math.PI).toFixed(2)}\xB0, Vertical Angle: ${(verticalAngle * 180 / Math.PI).toFixed(2)}\xB0`);
+    return horizontalAngle <= halfH && verticalAngle <= halfV;
+  }
+  drawEffect(dimension, pos, forward, numOfParticles) {
+    const halfH = this.totalHorizontalAngleDeg * Math.PI / 360;
+    const halfV = this.totalVerticalAngleDeg * Math.PI / 360;
+    const basis = CustomVectorUtils.createBasisFromForward(forward);
+    const right = basis.right, up = basis.up;
+    pos = CustomVectorUtils.translateRelativeToBasis(
+      pos,
+      basis,
+      this.attackOffset
+    );
+    const particlesNum = Math.round(numOfParticles ? numOfParticles : 3 * this.maxRange);
+    const lineParticlesNum = Math.round(numOfParticles ? numOfParticles : 3 * (this.maxRange - this.minRange));
+    const leftVector = CustomVectorUtils.rotateAroundAxis(forward, up, halfH);
+    const rightVector = CustomVectorUtils.rotateAroundAxis(forward, up, -halfH);
+    const leftUpVector = CustomVectorUtils.rotateAroundAxis(CustomVectorUtils.rotateAroundAxis(forward, up, halfH), right, halfV);
+    const leftDownVector = CustomVectorUtils.rotateAroundAxis(CustomVectorUtils.rotateAroundAxis(forward, up, halfH), right, -halfV);
+    const rightUpVector = CustomVectorUtils.rotateAroundAxis(CustomVectorUtils.rotateAroundAxis(forward, up, -halfH), right, halfV);
+    const rightDownVector = CustomVectorUtils.rotateAroundAxis(CustomVectorUtils.rotateAroundAxis(forward, up, -halfH), right, -halfV);
+    const rayLength = this.maxRange - this.minRange;
+    DrawEffects.drawRay(dimension, Vector3Utils.add(pos, Vector3Utils.scale(leftUpVector, this.minRange)), leftUpVector, rayLength, lineParticlesNum);
+    DrawEffects.drawRay(dimension, Vector3Utils.add(pos, Vector3Utils.scale(leftDownVector, this.minRange)), leftDownVector, rayLength, lineParticlesNum);
+    DrawEffects.drawRay(dimension, Vector3Utils.add(pos, Vector3Utils.scale(rightUpVector, this.minRange)), rightUpVector, rayLength, lineParticlesNum);
+    DrawEffects.drawRay(dimension, Vector3Utils.add(pos, Vector3Utils.scale(rightDownVector, this.minRange)), rightDownVector, rayLength, lineParticlesNum);
+    DrawEffects.drawArc(dimension, pos, forward, this.maxRange, [{ rotAxis: up, angleDeg: halfH }], particlesNum);
+    DrawEffects.drawArc(dimension, pos, forward, this.maxRange, [{ rotAxis: right, angleDeg: halfV }], particlesNum);
+    DrawEffects.drawArc(dimension, pos, forward, this.maxRange, [{ rotAxis: up, angleDeg: halfH }, { rotAxis: right, angleDeg: -halfV }], particlesNum);
+    DrawEffects.drawArc(dimension, pos, forward, this.maxRange, [{ rotAxis: up, angleDeg: halfH }, { rotAxis: right, angleDeg: halfV }], particlesNum);
+    DrawEffects.drawArc(dimension, pos, leftVector, this.maxRange, [{ rotAxis: right, angleDeg: -halfV }], particlesNum);
+    DrawEffects.drawArc(dimension, pos, rightVector, this.maxRange, [{ rotAxis: right, angleDeg: halfV }], particlesNum);
+    if (this.minRange > 0) {
+      DrawEffects.drawArc(dimension, pos, forward, this.minRange, [{ rotAxis: up, angleDeg: halfH }], particlesNum);
+      DrawEffects.drawArc(dimension, pos, forward, this.minRange, [{ rotAxis: right, angleDeg: halfV }], particlesNum);
+      DrawEffects.drawArc(dimension, pos, forward, this.minRange, [{ rotAxis: up, angleDeg: halfH }, { rotAxis: right, angleDeg: -halfV }], particlesNum);
+      DrawEffects.drawArc(dimension, pos, forward, this.minRange, [{ rotAxis: up, angleDeg: halfH }, { rotAxis: right, angleDeg: halfV }], particlesNum);
+      DrawEffects.drawArc(dimension, pos, leftVector, this.minRange, [{ rotAxis: right, angleDeg: -halfV }], particlesNum);
+      DrawEffects.drawArc(dimension, pos, rightVector, this.minRange, [{ rotAxis: right, angleDeg: halfV }], particlesNum);
+    }
+  }
+};
+var SlashAttacks = {
+  "Dagger": {
+    /**
+     * MaxRange: `2.8` MinRange: `0`
+     * 
+     * Horizontal Angle: `90°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `6` ticks
+     */
+    "ShortRangeCenter": new Slash(2.8, 0, 6, 90, 45),
+    /**
+     * MaxRange: `2.8` MinRange: `0`
+     * 
+     * Horizontal Angle: `90°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `6` ticks
+     */
+    "ShortRangeLeft": new Slash(2.8, 0, 6, 90, 45, { x: -0.5, y: 0, z: 0 }),
+    /**
+     * MaxRange: `2.8` MinRange: `0`
+     * 
+     * Horizontal Angle: `90°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `6` ticks
+     */
+    "ShortRangeRight": new Slash(2.8, 0, 6, 90, 45, { x: 0.5, y: 0, z: 0 })
+  },
+  "Sword": {
+    /**
+     * MaxRange: `3.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `120°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `8` ticks
+     * */
+    "NormalRange": new Slash(3.3, 0, 8, 120, 45),
+    /**
+     * MaxRange: `4.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `120°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `8` ticks
+     */
+    "LongRange": new Slash(4.3, 0, 8, 120, 45)
+  },
+  "Claymore": {
+    /**
+     * MaxRange: `4.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `180°` Vertical Angle: `60°`
+     * 
+     * Cooldown: `12` ticks
+     */
+    "LongRange": new Slash(4.3, 0, 12, 180, 60),
+    /**
+     * MaxRange: `5.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `180°` Vertical Angle: `60°`
+     * 
+     * Cooldown: `12` ticks
+     */
+    "VeryLongRange": new Slash(5.3, 0, 12, 180, 60)
+  },
+  "Glaive": {
+    /**
+     * MaxRange: `6.3` MinRange: `2`
+     * 
+     * Horizontal Angle: `150°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `12` ticks
+     */
+    "NormalRangeCenter": new Slash(6.3, 2, 12, 150, 45),
+    /**
+     * MaxRange: `6.3` MinRange: `2`
+     * 
+     * Horizontal Angle: `150°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `20` ticks
+     */
+    "NormalRangeSwirl": new Slash(6.3, 2, 20, 360, 45)
+  },
+  "Swirl": {
+    /**
+     * MaxRange: `2.8` MinRange: `0`
+     * 
+     * Horizontal Angle: `360°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `20` ticks
+     */
+    "ShortRange": new Slash(2.8, 0, 20, 360, 45),
+    /**
+     * MaxRange: `3.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `360°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `20` ticks
+     */
+    "NormalRange": new Slash(3.3, 0, 20, 360, 45),
+    /**
+     * MaxRange: `4.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `360°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `20` ticks
+     */
+    "LongRange": new Slash(4.3, 0, 20, 360, 45),
+    /**
+     * MaxRange: `5.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `360°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `20` ticks
+     */
+    "VeryLongRange": new Slash(5.3, 0, 20, 360, 45),
+    /**
+     * MaxRange: `6.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `360°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `20` ticks
+     */
+    "ExtremeRange": new Slash(6.3, 0, 20, 360, 45)
+  }
+};
+
+// ../Regolith/packs/ts-scripts/weapons/weaponConfigs.ts
+var customSword1 = new MeleeWeapon("fort:custom_sword_1");
+customSword1.addAttack({
+  attack: SlashAttacks.Sword.NormalRange,
+  damage: 7
+}).addAttack({
+  attack: SlashAttacks.Sword.NormalRange,
+  damage: 7
+}).addAttack({
+  attack: SlashAttacks.Swirl.LongRange,
+  damage: 7
+});
+WeaponRegistry.register(customSword1);
 
 // ../Regolith/packs/ts-scripts/main.ts
-var slash = new Slash(3, 120, 30, { x: 0, y: 0, z: 2 });
 EntityLinker.removeAllNonPersistentLinkedEntities();
 Interval.start();
 
