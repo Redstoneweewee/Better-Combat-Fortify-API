@@ -467,6 +467,14 @@ var C = class {
   static BLOCKPLACERANGE = 5.2;
   static CREATIVEHITRANGE = 6;
   static SURVIVALHITRANGE = 3.3;
+  static MELEERANGE = {
+    NONE: 0,
+    SHORT: 2.8,
+    MEDIUM: 3.3,
+    LONG: 4.3,
+    VERYLONG: 5.3,
+    EXTREME: 6.3
+  };
   static RESETCOMBOTICKS = 40;
   //ticks to reset combo attack index
 };
@@ -1086,7 +1094,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `10` ticks
      */
-    "ShortRangeCenter": new Slash(2.8, 0, 10, 90, 45),
+    "ShortRangeCenter": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45),
     /**
      * MaxRange: `2.8` MinRange: `0`
      * 
@@ -1094,7 +1102,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `10` ticks
      */
-    "ShortRangeLeft": new Slash(2.8, 0, 10, 90, 45, { x: -0.5, y: 0, z: 0 }),
+    "ShortRangeLeft": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45, { x: -0.5, y: 0, z: 0 }),
     /**
      * MaxRange: `2.8` MinRange: `0`
      * 
@@ -1102,7 +1110,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `10` ticks
      */
-    "ShortRangeRight": new Slash(2.8, 0, 10, 90, 45, { x: 0.5, y: 0, z: 0 })
+    "ShortRangeRight": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45, { x: 0.5, y: 0, z: 0 })
   },
   "Sword": {
     /**
@@ -1111,8 +1119,8 @@ var SlashAttacks = {
      * Horizontal Angle: `120°` Vertical Angle: `45°`
      * 
      * Cooldown: `12` ticks
-     * */
-    "NormalRange": new Slash(3.3, 0, 12, 120, 45),
+     */
+    "NormalRange": new Slash(C.MELEERANGE.MEDIUM, 0, 12, 120, 45),
     /**
      * MaxRange: `4.3` MinRange: `0`
      * 
@@ -1120,7 +1128,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `12` ticks
      */
-    "LongRange": new Slash(4.3, 0, 12, 120, 45),
+    "LongRange": new Slash(C.MELEERANGE.LONG, 0, 12, 120, 45),
     /**
      * MaxRange: `5.3` MinRange: `0`
      * 
@@ -1128,7 +1136,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `12` ticks
      */
-    "VeryLongRange": new Slash(5.3, 0, 12, 120, 45)
+    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 12, 120, 45)
   },
   "Claymore": {
     /**
@@ -1138,7 +1146,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `12` ticks
      */
-    "LongRange": new Slash(4.3, 0, 12, 180, 60),
+    "LongRange": new Slash(C.MELEERANGE.LONG, 0, 12, 180, 60),
     /**
      * MaxRange: `5.3` MinRange: `0`
      * 
@@ -1146,7 +1154,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `12` ticks
      */
-    "VeryLongRange": new Slash(5.3, 0, 12, 180, 60)
+    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 12, 180, 60)
   },
   "Glaive": {
     /**
@@ -1156,7 +1164,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `12` ticks
      */
-    "NormalRangeCenter": new Slash(6.3, 2, 12, 150, 45),
+    "NormalRangeCenter": new Slash(C.MELEERANGE.EXTREME, 2, 12, 150, 45),
     /**
      * MaxRange: `6.3` MinRange: `2`
      * 
@@ -1164,7 +1172,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `20` ticks
      */
-    "NormalRangeSwirl": new Slash(6.3, 2, 20, 360, 45)
+    "NormalRangeSwirl": new Slash(C.MELEERANGE.EXTREME, 2, 20, 360, 45)
   },
   "Swirl": {
     /**
@@ -1174,7 +1182,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `20` ticks
      */
-    "ShortRange": new Slash(2.8, 0, 20, 360, 45),
+    "ShortRange": new Slash(C.MELEERANGE.SHORT, 0, 20, 360, 45),
     /**
      * MaxRange: `3.3` MinRange: `0`
      * 
@@ -1182,7 +1190,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `20` ticks
      */
-    "NormalRange": new Slash(3.3, 0, 20, 360, 45),
+    "NormalRange": new Slash(C.MELEERANGE.MEDIUM, 0, 20, 360, 45),
     /**
      * MaxRange: `4.3` MinRange: `0`
      * 
@@ -1190,7 +1198,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `20` ticks
      */
-    "LongRange": new Slash(4.3, 0, 20, 360, 45),
+    "LongRange": new Slash(C.MELEERANGE.LONG, 0, 20, 360, 45),
     /**
      * MaxRange: `5.3` MinRange: `0`
      * 
@@ -1198,7 +1206,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `20` ticks
      */
-    "VeryLongRange": new Slash(5.3, 0, 20, 360, 45),
+    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 20, 360, 45),
     /**
      * MaxRange: `6.3` MinRange: `0`
      * 
@@ -1206,7 +1214,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `20` ticks
      */
-    "ExtremeRange": new Slash(6.3, 0, 20, 360, 45)
+    "ExtremeRange": new Slash(C.MELEERANGE.EXTREME, 0, 20, 360, 45)
   }
 };
 

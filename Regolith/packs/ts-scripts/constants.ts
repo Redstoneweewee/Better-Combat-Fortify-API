@@ -42,6 +42,15 @@ export class C {
     static readonly CREATIVEHITRANGE = 6;
     static readonly SURVIVALHITRANGE = 3.3;
 
+    static readonly MELEERANGE = {
+        NONE: 0,
+        SHORT: 2.8,
+        MEDIUM: 3.3,
+        LONG: 4.3,
+        VERYLONG: 5.3,
+        EXTREME: 6.3
+    }
+
 
     static readonly RESETCOMBOTICKS = 40; //ticks to reset combo attack index
 }

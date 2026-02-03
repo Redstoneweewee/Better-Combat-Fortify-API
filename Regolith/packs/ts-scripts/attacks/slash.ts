@@ -3,6 +3,7 @@ import { CustomVectorUtils, DrawEffects } from "../utils/utils";
 import { Vector3Utils } from "../utils/minecraft-math";
 import { Interval } from "../utils/interval";
 import { IAttack } from "./attack";
+import { C } from "../constants";
 
 
 export class Slash implements IAttack {
@@ -130,7 +131,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `10` ticks
          */
-        "ShortRangeCenter": new Slash(2.8, 0, 10, 90, 45),
+        "ShortRangeCenter": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45),
         /**
          * MaxRange: `2.8` MinRange: `0`
          * 
@@ -138,7 +139,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `10` ticks
          */
-        "ShortRangeLeft": new Slash(2.8, 0, 10, 90, 45, {x: -0.5, y: 0, z: 0}),
+        "ShortRangeLeft": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45, {x: -0.5, y: 0, z: 0}),
         /**
          * MaxRange: `2.8` MinRange: `0`
          * 
@@ -146,7 +147,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `10` ticks
          */
-        "ShortRangeRight": new Slash(2.8, 0, 10, 90, 45, {x: 0.5, y: 0, z: 0}),
+        "ShortRangeRight": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45, {x: 0.5, y: 0, z: 0}),
     },
     "Sword": {
         /**
@@ -155,8 +156,8 @@ export const SlashAttacks = {
          * Horizontal Angle: `120°` Vertical Angle: `45°`
          * 
          * Cooldown: `12` ticks
-         * */
-        "NormalRange": new Slash(3.3, 0, 12, 120, 45),
+         */
+        "NormalRange": new Slash(C.MELEERANGE.MEDIUM, 0, 12, 120, 45),
         /**
          * MaxRange: `4.3` MinRange: `0`
          * 
@@ -164,7 +165,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `12` ticks
          */
-        "LongRange": new Slash(4.3, 0, 12, 120, 45),
+        "LongRange": new Slash(C.MELEERANGE.LONG, 0, 12, 120, 45),
         /**
          * MaxRange: `5.3` MinRange: `0`
          * 
@@ -172,7 +173,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `12` ticks
          */
-        "VeryLongRange": new Slash(5.3, 0, 12, 120, 45),
+        "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 12, 120, 45),
     },
     "Claymore": {
         /**
@@ -182,7 +183,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `12` ticks
          */
-        "LongRange": new Slash(4.3, 0, 12, 180, 60),
+        "LongRange": new Slash(C.MELEERANGE.LONG, 0, 12, 180, 60),
         /**
          * MaxRange: `5.3` MinRange: `0`
          * 
@@ -190,7 +191,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `12` ticks
          */
-        "VeryLongRange": new Slash(5.3, 0, 12, 180, 60),
+        "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 12, 180, 60),
     },
     "Glaive": {
         /**
@@ -200,7 +201,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `12` ticks
          */
-        "NormalRangeCenter": new Slash(6.3, 2, 12, 150, 45),
+        "NormalRangeCenter": new Slash(C.MELEERANGE.EXTREME, 2, 12, 150, 45),
         /**
          * MaxRange: `6.3` MinRange: `2`
          * 
@@ -208,7 +209,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `20` ticks
          */
-        "NormalRangeSwirl": new Slash(6.3, 2, 20, 360, 45),
+        "NormalRangeSwirl": new Slash(C.MELEERANGE.EXTREME, 2, 20, 360, 45),
     },
     "Swirl": {
         /**
@@ -218,7 +219,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `20` ticks
          */
-        "ShortRange": new Slash(2.8, 0, 20, 360, 45),
+        "ShortRange": new Slash(C.MELEERANGE.SHORT, 0, 20, 360, 45),
         /**
          * MaxRange: `3.3` MinRange: `0`
          * 
@@ -226,7 +227,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `20` ticks
          */
-        "NormalRange": new Slash(3.3, 0, 20, 360, 45),
+        "NormalRange": new Slash(C.MELEERANGE.MEDIUM, 0, 20, 360, 45),
         /**
          * MaxRange: `4.3` MinRange: `0`
          * 
@@ -234,7 +235,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `20` ticks
          */
-        "LongRange": new Slash(4.3, 0, 20, 360, 45),
+        "LongRange": new Slash(C.MELEERANGE.LONG, 0, 20, 360, 45),
         /**
          * MaxRange: `5.3` MinRange: `0`
          * 
@@ -242,7 +243,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `20` ticks
          */
-        "VeryLongRange": new Slash(5.3, 0, 20, 360, 45),
+        "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 20, 360, 45),
         /**
          * MaxRange: `6.3` MinRange: `0`
          * 
@@ -250,6 +251,6 @@ export const SlashAttacks = {
          * 
          * Cooldown: `20` ticks
          */
-        "ExtremeRange": new Slash(6.3, 0, 20, 360, 45),
+        "ExtremeRange": new Slash(C.MELEERANGE.EXTREME, 0, 20, 360, 45),
     }
 } as const;
