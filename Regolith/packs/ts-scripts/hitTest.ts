@@ -91,8 +91,14 @@ function initializeHitDetectEntity(entity: Entity) {
     const owner = EntityLinker.getOwnerEntity(entity);
     if(owner === undefined) return;
     const intervalId = system.runInterval(() => {
-        if(!EntityUtils.isAlive(entity)) { system.clearRun(intervalId); return; }
-        if(!EntityUtils.isAlive(owner)) { system.clearRun(intervalId); return; }
+        try {
+            if(!EntityUtils.isAlive(entity)) { system.clearRun(intervalId); return; }
+            if(!EntityUtils.isAlive(owner)) { system.clearRun(intervalId); return; }
+        }
+        catch {
+            system.clearRun(intervalId);
+            return;
+        }
         
         if(!EntityLinker.getLinkedEntityStasis(entity)) {
             const veloH = {x: owner.getVelocity().x, y: 0, z: owner.getVelocity().z};

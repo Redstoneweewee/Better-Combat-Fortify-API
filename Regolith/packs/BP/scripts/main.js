@@ -851,11 +851,16 @@ function initializeHitDetectEntity(entity) {
   const owner = EntityLinker.getOwnerEntity(entity);
   if (owner === void 0) return;
   const intervalId = system4.runInterval(() => {
-    if (!EntityUtils.isAlive(entity)) {
-      system4.clearRun(intervalId);
-      return;
-    }
-    if (!EntityUtils.isAlive(owner)) {
+    try {
+      if (!EntityUtils.isAlive(entity)) {
+        system4.clearRun(intervalId);
+        return;
+      }
+      if (!EntityUtils.isAlive(owner)) {
+        system4.clearRun(intervalId);
+        return;
+      }
+    } catch {
       system4.clearRun(intervalId);
       return;
     }
