@@ -4,10 +4,10 @@
         "description": {
             "identifier": "fort:hit_detect_entity",
             "materials": {
-                "default": "goat"
+                "default": "entity_alphablend"
             },
             "textures": {
-                "default": "textures/entity/zombie/husk"
+                "default": "textures/entity/hit_detect_entity"
             },
             "geometry": {
                 "default": "geometry.hit_detect_entity"

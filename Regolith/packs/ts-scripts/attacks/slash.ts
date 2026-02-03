@@ -128,25 +128,25 @@ export const SlashAttacks = {
          * 
          * Horizontal Angle: `90°` Vertical Angle: `45°`
          * 
-         * Cooldown: `6` ticks
+         * Cooldown: `10` ticks
          */
-        "ShortRangeCenter": new Slash(2.8, 0, 6, 90, 45),
+        "ShortRangeCenter": new Slash(2.8, 0, 10, 90, 45),
         /**
          * MaxRange: `2.8` MinRange: `0`
          * 
          * Horizontal Angle: `90°` Vertical Angle: `45°`
          * 
-         * Cooldown: `6` ticks
+         * Cooldown: `10` ticks
          */
-        "ShortRangeLeft": new Slash(2.8, 0, 6, 90, 45, {x: -0.5, y: 0, z: 0}),
+        "ShortRangeLeft": new Slash(2.8, 0, 10, 90, 45, {x: -0.5, y: 0, z: 0}),
         /**
          * MaxRange: `2.8` MinRange: `0`
          * 
          * Horizontal Angle: `90°` Vertical Angle: `45°`
          * 
-         * Cooldown: `6` ticks
+         * Cooldown: `10` ticks
          */
-        "ShortRangeRight": new Slash(2.8, 0, 6, 90, 45, {x: 0.5, y: 0, z: 0}),
+        "ShortRangeRight": new Slash(2.8, 0, 10, 90, 45, {x: 0.5, y: 0, z: 0}),
     },
     "Sword": {
         /**
@@ -154,17 +154,25 @@ export const SlashAttacks = {
          * 
          * Horizontal Angle: `120°` Vertical Angle: `45°`
          * 
-         * Cooldown: `8` ticks
+         * Cooldown: `12` ticks
          * */
-        "NormalRange": new Slash(3.3, 0, 2, 120, 45),
+        "NormalRange": new Slash(3.3, 0, 12, 120, 45),
         /**
          * MaxRange: `4.3` MinRange: `0`
          * 
          * Horizontal Angle: `120°` Vertical Angle: `45°`
          * 
-         * Cooldown: `8` ticks
+         * Cooldown: `12` ticks
          */
-        "LongRange": new Slash(4.3, 0, 8, 120, 45),
+        "LongRange": new Slash(4.3, 0, 12, 120, 45),
+        /**
+         * MaxRange: `5.3` MinRange: `0`
+         * 
+         * Horizontal Angle: `120°` Vertical Angle: `45°`
+         * 
+         * Cooldown: `12` ticks
+         */
+        "VeryLongRange": new Slash(5.3, 0, 12, 120, 45),
     },
     "Claymore": {
         /**

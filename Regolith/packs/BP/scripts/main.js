@@ -209,7 +209,7 @@ scale offset:       ${offsets.sc}`;
 }
 
 // ../Regolith/packs/ts-scripts/hitTest.ts
-import { GameMode as GameMode2, Player as Player3, system as system4, world as world4 } from "@minecraft/server";
+import { system as system4, world as world4 } from "@minecraft/server";
 
 // ../Regolith/packs/ts-scripts/utils/utils.ts
 import { EnchantmentTypes, EntityComponentTypes, EntityDamageCause, EntityEquippableComponent, EntityHealthComponent, EquipmentSlot, ItemComponentTypes, Player as Player2, world as world2 } from "@minecraft/server";
@@ -794,16 +794,13 @@ var WeaponRegistry = class {
 };
 
 // ../Regolith/packs/ts-scripts/hitTest.ts
-world4.afterEvents.entityHitBlock.subscribe((eventData) => {
-  const entity = eventData.damagingEntity;
-  if (!(entity instanceof Player3)) return;
-  if (!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
-  onHit(entity, 0 /* Block */);
-});
 world4.afterEvents.entityHitEntity.subscribe((eventData) => {
   const entity = eventData.damagingEntity;
   const hitEntity = eventData.hitEntity;
-  if (!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
+  const weaponObject = WeaponRegistry.getWeapon(EntityUtils.getMainhandItemStack(entity)?.typeId ?? "");
+  if (weaponObject === void 0) return;
+  const weaponMaxRange = (weaponObject.getCurrentAttack()?.attack.maxRange ?? 0.1) - 0.1;
+  if (EntityUtils.getValidEntitiesFromRayCast(entity, entity.getHeadLocation(), entity.getViewDirection(), weaponMaxRange).length === 0) return;
   if (hitEntity.typeId === C.HITDETECTENTITYNAME) {
     onHit(entity, 2 /* HitDetectEntity */);
   } else {
@@ -819,14 +816,6 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
       const hitPos = Vector3Utils.add({ x: hitBlock.x, y: hitBlock.y, z: hitBlock.z }, BlockRaycastHit.faceLocation);
       const distance = Vector3Utils.magnitude(Vector3Utils.subtract(hitPos, player.getHeadLocation()));
       if (distance <= C.BLOCKPLACERANGE) {
-        shouldSpawnHitDetectEntity = false;
-      }
-    }
-    const gamemode = player.getGameMode();
-    const entityRaycastRange = gamemode === GameMode2.Creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
-    if (EntityUtils.getValidEntitiesNearby(player, entityRaycastRange).length > 0) {
-      const entityRaycastHit = EntityUtils.getValidEntitiesFromRayCast(player, player.getHeadLocation(), player.getViewDirection(), entityRaycastRange);
-      if (entityRaycastHit.length > 0) {
         shouldSpawnHitDetectEntity = false;
       }
     }
@@ -1095,25 +1084,25 @@ var SlashAttacks = {
      * 
      * Horizontal Angle: `90°` Vertical Angle: `45°`
      * 
-     * Cooldown: `6` ticks
+     * Cooldown: `10` ticks
      */
-    "ShortRangeCenter": new Slash(2.8, 0, 6, 90, 45),
+    "ShortRangeCenter": new Slash(2.8, 0, 10, 90, 45),
     /**
      * MaxRange: `2.8` MinRange: `0`
      * 
      * Horizontal Angle: `90°` Vertical Angle: `45°`
      * 
-     * Cooldown: `6` ticks
+     * Cooldown: `10` ticks
      */
-    "ShortRangeLeft": new Slash(2.8, 0, 6, 90, 45, { x: -0.5, y: 0, z: 0 }),
+    "ShortRangeLeft": new Slash(2.8, 0, 10, 90, 45, { x: -0.5, y: 0, z: 0 }),
     /**
      * MaxRange: `2.8` MinRange: `0`
      * 
      * Horizontal Angle: `90°` Vertical Angle: `45°`
      * 
-     * Cooldown: `6` ticks
+     * Cooldown: `10` ticks
      */
-    "ShortRangeRight": new Slash(2.8, 0, 6, 90, 45, { x: 0.5, y: 0, z: 0 })
+    "ShortRangeRight": new Slash(2.8, 0, 10, 90, 45, { x: 0.5, y: 0, z: 0 })
   },
   "Sword": {
     /**
@@ -1121,17 +1110,25 @@ var SlashAttacks = {
      * 
      * Horizontal Angle: `120°` Vertical Angle: `45°`
      * 
-     * Cooldown: `8` ticks
+     * Cooldown: `12` ticks
      * */
-    "NormalRange": new Slash(3.3, 0, 2, 120, 45),
+    "NormalRange": new Slash(3.3, 0, 12, 120, 45),
     /**
      * MaxRange: `4.3` MinRange: `0`
      * 
      * Horizontal Angle: `120°` Vertical Angle: `45°`
      * 
-     * Cooldown: `8` ticks
+     * Cooldown: `12` ticks
      */
-    "LongRange": new Slash(4.3, 0, 8, 120, 45)
+    "LongRange": new Slash(4.3, 0, 12, 120, 45),
+    /**
+     * MaxRange: `5.3` MinRange: `0`
+     * 
+     * Horizontal Angle: `120°` Vertical Angle: `45°`
+     * 
+     * Cooldown: `12` ticks
+     */
+    "VeryLongRange": new Slash(5.3, 0, 12, 120, 45)
   },
   "Claymore": {
     /**
@@ -1216,10 +1213,10 @@ var SlashAttacks = {
 // ../Regolith/packs/ts-scripts/weapons/weaponConfigs.ts
 var customSword1 = new MeleeWeapon("fort:custom_sword_1");
 customSword1.addAttack({
-  attack: SlashAttacks.Sword.NormalRange,
+  attack: SlashAttacks.Sword.VeryLongRange,
   damage: 7
 }).addAttack({
-  attack: SlashAttacks.Sword.NormalRange,
+  attack: SlashAttacks.Sword.VeryLongRange,
   damage: 7
 }).addAttack({
   attack: SlashAttacks.Swirl.LongRange,

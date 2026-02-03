@@ -16,7 +16,7 @@ enum HitType {
     HitDetectEntity
 }
 
-
+/*
 world.afterEvents.entityHitBlock.subscribe(eventData => {
     const entity = eventData.damagingEntity;
     //const block = eventData.hitBlock;
@@ -24,12 +24,18 @@ world.afterEvents.entityHitBlock.subscribe(eventData => {
     if(!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
     onHit(entity, HitType.Block);
 });
+*/
 
 /**Tests for non-players as well */
 world.afterEvents.entityHitEntity.subscribe(eventData => {
     const entity = eventData.damagingEntity;
     const hitEntity = eventData.hitEntity;
-    if(!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
+
+    const weaponObject = WeaponRegistry.getWeapon(EntityUtils.getMainhandItemStack(entity)?.typeId ?? "");
+    if(weaponObject === undefined) return;
+    const weaponMaxRange = (weaponObject.getCurrentAttack()?.attack.maxRange ?? 0.1) - 0.1;
+    if(EntityUtils.getValidEntitiesFromRayCast(entity, entity.getHeadLocation(), entity.getViewDirection(), weaponMaxRange).length === 0) return;
+
     if(hitEntity.typeId === C.HITDETECTENTITYNAME) {
         onHit(entity, HitType.HitDetectEntity);
     }
@@ -37,6 +43,7 @@ world.afterEvents.entityHitEntity.subscribe(eventData => {
         onHit(entity, HitType.Entity);
     }
 });
+
 
 Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
     world.getAllPlayers().forEach(player => {
@@ -52,6 +59,7 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
             }
             //world.sendMessage(`Block hit at distance: ${distance}`);
         }
+        /*
         const gamemode = player.getGameMode();
         const entityRaycastRange = gamemode === GameMode.Creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
         //world.sendMessage(`Gamemode: ${gamemode}, Enum: ${GameMode.creative} Entity raycast range: ${entityRaycastRange}`);
@@ -62,6 +70,7 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
                 shouldSpawnHitDetectEntity = false;
             }
         }
+            */
 
         if(shouldSpawnHitDetectEntity) {
             if(EntityLinker.getLinkedEntityUsingTypeId(player, C.HITDETECTENTITYNAME) === undefined) {
@@ -81,7 +90,7 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
             if(hitDetectEntity !== undefined) {
                 EntityLinker.setLinkedEntityStasis(hitDetectEntity, true);
             }
-        }        
+        }
     });
 }, 1));
 

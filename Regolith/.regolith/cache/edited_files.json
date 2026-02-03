@@ -12,6 +12,7 @@
 			"models\\entity\\geometry.hit_detect_entity.json",
 			"models\\entity\\geometry.nexus_bow.json",
 			"pack_icon.png",
+			"textures\\entity\\hit_detect_entity.png",
 			"textures\\item_texture.json",
 			"textures\\items\\custom_sword.pdn",
 			"textures\\items\\custom_sword.png",

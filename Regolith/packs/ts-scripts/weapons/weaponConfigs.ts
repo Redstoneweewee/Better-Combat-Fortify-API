@@ -12,11 +12,11 @@ const customSword1 = new MeleeWeapon("fort:custom_sword_1");
 
 customSword1
     .addAttack({
-        attack: SlashAttacks.Sword.NormalRange,
+        attack: SlashAttacks.Sword.VeryLongRange,
         damage: 7
     })
     .addAttack( {
-        attack: SlashAttacks.Sword.NormalRange,
+        attack: SlashAttacks.Sword.VeryLongRange,
         damage: 7
     })
     .addAttack({
