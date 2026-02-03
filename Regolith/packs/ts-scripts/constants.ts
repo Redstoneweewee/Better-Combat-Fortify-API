@@ -19,7 +19,7 @@ export class C {
 
     /**Hit Test */
     static readonly HITEXCLUDEDFAMILIES = ["minecraft:inanimate", "minecraft:projectile", "inanimate"];
-    static readonly HITEXCLUDEDGAMEMODES = [GameMode.creative, GameMode.spectator];
+    static readonly HITEXCLUDEDGAMEMODES = [GameMode.Creative, GameMode.Spectator];
     static readonly HITEXCLUDEDTYPES = [
         "minecraft:item", 
         "minecraft:snowball", 

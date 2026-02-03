@@ -1,4 +1,4 @@
-import { Dimension, Entity, EntityComponentTypes, EntityEquippableComponent, EntityHealthComponent, EntityRaycastHit, EquipmentSlot, ItemStack, Player, Vector3 } from "@minecraft/server";
+import { Dimension, EnchantmentType, EnchantmentTypes, Entity, EntityComponentTypes, EntityDamageCause, EntityEquippableComponent, EntityHealthComponent, EntityRaycastHit, EquipmentSlot, ItemComponentTypes, ItemStack, Player, system, Vector3, world } from "@minecraft/server";
 import { Vector3Utils } from "./minecraft-math";
 import { C } from "../constants";
 
@@ -134,6 +134,72 @@ export class EntityUtils {
     });
     return output;
   }
+
+  /** Deals damage to an entity ignoring hit immunity, possibly ignoring a percentage of armor and protection enchantments */
+  static dealDamage(attacker: Entity, receiver: Entity, damage: number, armorIgnorePercent: number = 0, protectionIgnorePercent: number = 0, resistanceIgnorePercent: number = 0): void {
+    const healthComp = receiver.getComponent(EntityComponentTypes.Health);
+    if(!(healthComp instanceof EntityHealthComponent)) return;
+    let finalDamage = damage;
+
+    const adjustedArmorReductionMult = this.#getArmorDamageReductionMult(receiver, damage) * (1 - armorIgnorePercent);
+    const adjustedProtectionReductionMult = this.#getProtectionDamageReductionMult(receiver) * (1 - protectionIgnorePercent);
+    const adjustedResistanceReductionMult = CustomMathUtils.clamp(this.#getResistanceDamageReductionMult(receiver) * (1 - resistanceIgnorePercent), 0, 1);
+
+    finalDamage *= (1 - adjustedArmorReductionMult);
+    finalDamage *= (1 - adjustedProtectionReductionMult);
+    finalDamage *= (1 - adjustedResistanceReductionMult);
+
+
+
+     //const armorReductionMult = Math.min(80, Math.max(4*totalArmor/5, 4*totalArmor - (16*damage)/(totalToughness+8) )) / 100;
+     //const protectionReductionMult = Math.min(totalProtLevel * 4, 20) / 100;
+     //finalDamage *= (1 - armorReductionMult);
+     //finalDamage *= (1 - protectionReductionMult);
+
+    world.sendMessage(`Dealt ${finalDamage} damage, aR: ${adjustedArmorReductionMult}%, pR: ${adjustedProtectionReductionMult}%, rR: ${adjustedResistanceReductionMult}%`);
+    healthComp.setCurrentValue(CustomMathUtils.clamp(healthComp.currentValue - finalDamage, 0, healthComp.currentValue));
+
+    receiver.applyDamage(0.001, {cause: EntityDamageCause.override, damagingEntity: attacker}); //to trigger damage effects without actually dealing damage
+    //receiver.applyDamage(damage, {cause: EntityDamageCause.entityAttack, damagingEntity: attacker}); //to trigger damage effects without actually dealing damage
+  }
+
+
+  static #getArmorDamageReductionMult(entity: Entity, damage: number): number {
+    const equippableComp = entity.getComponent(EntityComponentTypes.Equippable);
+    if (!(equippableComp instanceof EntityEquippableComponent)) return 0;
+    const a = equippableComp.totalArmor;
+    const t = equippableComp.totalToughness;
+    if(a <= 0 && t <= 0) return 0;
+    const armorReductionMult = Math.min(80, Math.max(4*a/5, 4*a - (16*damage)/(t+8) )) / 100;
+    return armorReductionMult;
+  }
+
+  static #getProtectionDamageReductionMult(entity: Entity): number {
+    const equippableComp = entity.getComponent(EntityComponentTypes.Equippable);
+    if (!(equippableComp instanceof EntityEquippableComponent)) return 0;
+    const totalProtLevel = this.#getEnchantmentLevel(equippableComp.getEquipment(EquipmentSlot.Head), EnchantmentTypes.get("minecraft:protection")!)
+                          + this.#getEnchantmentLevel(equippableComp.getEquipment(EquipmentSlot.Chest), EnchantmentTypes.get("minecraft:protection")!)
+                          + this.#getEnchantmentLevel(equippableComp.getEquipment(EquipmentSlot.Legs), EnchantmentTypes.get("minecraft:protection")!)
+                          + this.#getEnchantmentLevel(equippableComp.getEquipment(EquipmentSlot.Feet), EnchantmentTypes.get("minecraft:protection")!);
+    if(totalProtLevel <= 0) return 0;
+    return Math.min(totalProtLevel * 4, 20) / 100;
+  }
+
+  /**Can go over 100% */
+  static #getResistanceDamageReductionMult(entity: Entity): number {
+    const resistanceLevel = (entity.getEffect("minecraft:resistance")?.amplifier ?? -1)+1;
+    return (resistanceLevel * 20) / 100;
+  }
+
+  static #getEnchantmentLevel(itemStack: ItemStack | undefined, enchantmentType: EnchantmentType): number {
+    if (!itemStack) return 0;
+    const enchantableComp = itemStack.getComponent(ItemComponentTypes.Enchantable);
+    if (!(enchantableComp)) return 0;
+    const enchantment = enchantableComp.getEnchantment(enchantmentType.id);
+    if (enchantment === undefined) return 0;
+    return enchantment.level;
+  }
+
 }
 
 export class DrawEffects {

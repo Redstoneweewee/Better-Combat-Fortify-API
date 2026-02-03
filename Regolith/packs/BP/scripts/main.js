@@ -209,10 +209,10 @@ scale offset:       ${offsets.sc}`;
 }
 
 // ../Regolith/packs/ts-scripts/hitTest.ts
-import { GameMode as GameMode2, Player as Player3, system as system3, world as world3 } from "@minecraft/server";
+import { GameMode as GameMode2, Player as Player3, system as system4, world as world4 } from "@minecraft/server";
 
 // ../Regolith/packs/ts-scripts/utils/utils.ts
-import { EntityComponentTypes, EntityEquippableComponent, EntityHealthComponent, EquipmentSlot, Player as Player2 } from "@minecraft/server";
+import { EnchantmentTypes, EntityComponentTypes, EntityDamageCause, EntityEquippableComponent, EntityHealthComponent, EquipmentSlot, ItemComponentTypes, Player as Player2, world as world2 } from "@minecraft/server";
 
 // ../Regolith/packs/ts-scripts/utils/minecraft-math.js
 import { BlockVolume } from "@minecraft/server";
@@ -446,7 +446,7 @@ var C = class {
   static HITDETECTENTITYNAME = "fort:hit_detect_entity";
   /**Hit Test */
   static HITEXCLUDEDFAMILIES = ["minecraft:inanimate", "minecraft:projectile", "inanimate"];
-  static HITEXCLUDEDGAMEMODES = [GameMode.creative, GameMode.spectator];
+  static HITEXCLUDEDGAMEMODES = [GameMode.Creative, GameMode.Spectator];
   static HITEXCLUDEDTYPES = [
     "minecraft:item",
     "minecraft:snowball",
@@ -568,6 +568,50 @@ var EntityUtils = class _EntityUtils {
     });
     return output;
   }
+  /** Deals damage to an entity ignoring hit immunity, possibly ignoring a percentage of armor and protection enchantments */
+  static dealDamage(attacker, receiver, damage, armorIgnorePercent = 0, protectionIgnorePercent = 0, resistanceIgnorePercent = 0) {
+    const healthComp = receiver.getComponent(EntityComponentTypes.Health);
+    if (!(healthComp instanceof EntityHealthComponent)) return;
+    let finalDamage = damage;
+    const adjustedArmorReductionMult = this.#getArmorDamageReductionMult(receiver, damage) * (1 - armorIgnorePercent);
+    const adjustedProtectionReductionMult = this.#getProtectionDamageReductionMult(receiver) * (1 - protectionIgnorePercent);
+    const adjustedResistanceReductionMult = CustomMathUtils.clamp(this.#getResistanceDamageReductionMult(receiver) * (1 - resistanceIgnorePercent), 0, 1);
+    finalDamage *= 1 - adjustedArmorReductionMult;
+    finalDamage *= 1 - adjustedProtectionReductionMult;
+    finalDamage *= 1 - adjustedResistanceReductionMult;
+    world2.sendMessage(`Dealt ${finalDamage} damage, aR: ${adjustedArmorReductionMult}%, pR: ${adjustedProtectionReductionMult}%, rR: ${adjustedResistanceReductionMult}%`);
+    healthComp.setCurrentValue(CustomMathUtils.clamp(healthComp.currentValue - finalDamage, 0, healthComp.currentValue));
+    receiver.applyDamage(1e-3, { cause: EntityDamageCause.override, damagingEntity: attacker });
+  }
+  static #getArmorDamageReductionMult(entity, damage) {
+    const equippableComp = entity.getComponent(EntityComponentTypes.Equippable);
+    if (!(equippableComp instanceof EntityEquippableComponent)) return 0;
+    const a = equippableComp.totalArmor;
+    const t = equippableComp.totalToughness;
+    if (a <= 0 && t <= 0) return 0;
+    const armorReductionMult = Math.min(80, Math.max(4 * a / 5, 4 * a - 16 * damage / (t + 8))) / 100;
+    return armorReductionMult;
+  }
+  static #getProtectionDamageReductionMult(entity) {
+    const equippableComp = entity.getComponent(EntityComponentTypes.Equippable);
+    if (!(equippableComp instanceof EntityEquippableComponent)) return 0;
+    const totalProtLevel = this.#getEnchantmentLevel(equippableComp.getEquipment(EquipmentSlot.Head), EnchantmentTypes.get("minecraft:protection")) + this.#getEnchantmentLevel(equippableComp.getEquipment(EquipmentSlot.Chest), EnchantmentTypes.get("minecraft:protection")) + this.#getEnchantmentLevel(equippableComp.getEquipment(EquipmentSlot.Legs), EnchantmentTypes.get("minecraft:protection")) + this.#getEnchantmentLevel(equippableComp.getEquipment(EquipmentSlot.Feet), EnchantmentTypes.get("minecraft:protection"));
+    if (totalProtLevel <= 0) return 0;
+    return Math.min(totalProtLevel * 4, 20) / 100;
+  }
+  /**Can go over 100% */
+  static #getResistanceDamageReductionMult(entity) {
+    const resistanceLevel = (entity.getEffect("minecraft:resistance")?.amplifier ?? -1) + 1;
+    return resistanceLevel * 20 / 100;
+  }
+  static #getEnchantmentLevel(itemStack, enchantmentType) {
+    if (!itemStack) return 0;
+    const enchantableComp = itemStack.getComponent(ItemComponentTypes.Enchantable);
+    if (!enchantableComp) return 0;
+    const enchantment = enchantableComp.getEnchantment(enchantmentType.id);
+    if (enchantment === void 0) return 0;
+    return enchantment.level;
+  }
 };
 var DrawEffects = class {
   static drawRay(dimension, startPos, direction, length, pointsNum) {
@@ -607,7 +651,7 @@ var DrawEffects = class {
 };
 
 // ../Regolith/packs/ts-scripts/utils/entityLinker.ts
-import { world as world2 } from "@minecraft/server";
+import { world as world3 } from "@minecraft/server";
 var EntityLinker = class _EntityLinker {
   /**Maps `entity.id` to arrays of linked entities*/
   static #linkedEntities = /* @__PURE__ */ new Map();
@@ -662,19 +706,19 @@ var EntityLinker = class _EntityLinker {
     return newEntity;
   }
   static #addIdToWorldDynamicProperties(linkedEntityId, isPersistent) {
-    const existing = JSON.parse(String(world2.getDynamicProperty(isPersistent ? C.PERSISTENTDPNAME : C.NONPERSISTENTDPNAME) ?? "[]")) ?? [];
+    const existing = JSON.parse(String(world3.getDynamicProperty(isPersistent ? C.PERSISTENTDPNAME : C.NONPERSISTENTDPNAME) ?? "[]")) ?? [];
     existing.push(linkedEntityId);
-    world2.setDynamicProperty(isPersistent ? C.PERSISTENTDPNAME : C.NONPERSISTENTDPNAME, JSON.stringify(existing));
+    world3.setDynamicProperty(isPersistent ? C.PERSISTENTDPNAME : C.NONPERSISTENTDPNAME, JSON.stringify(existing));
   }
   static removeAllNonPersistentLinkedEntities() {
-    const linkedEntityIds = JSON.parse(String(world2.getDynamicProperty(C.NONPERSISTENTDPNAME) ?? "[]")) ?? [];
+    const linkedEntityIds = JSON.parse(String(world3.getDynamicProperty(C.NONPERSISTENTDPNAME) ?? "[]")) ?? [];
     linkedEntityIds.forEach((id) => {
-      world2.getEntity(id)?.remove();
+      world3.getEntity(id)?.remove();
       _EntityLinker.#ownerEntity.delete(id);
       _EntityLinker.#linkedEntities.delete(id);
       _EntityLinker.#linkedEntityStasis.delete(id);
     });
-    world2.setDynamicProperty(C.NONPERSISTENTDPNAME, JSON.stringify([]));
+    world3.setDynamicProperty(C.NONPERSISTENTDPNAME, JSON.stringify([]));
   }
   static removeLinkedEntityById(ownerId, linkedEntityId) {
     _EntityLinker.#ownerEntity.delete(linkedEntityId);
@@ -694,7 +738,7 @@ var EntityLinker = class _EntityLinker {
   static printLinkedEntities() {
     let output = "All Linked Entities:\n";
     _EntityLinker.#linkedEntities.forEach((linkedEntities, sourceId) => {
-      output += `Source Entity TypeId: ${world2.getEntity(sourceId)?.typeId}
+      output += `Source Entity TypeId: ${world3.getEntity(sourceId)?.typeId}
 `;
       linkedEntities.forEach((entity) => {
         output += `  Linked Entity ID: ${entity.id}, Type ID: ${entity.typeId}, Position: ${entity.location.x}, ${entity.location.y}, ${entity.location.z}
@@ -750,13 +794,13 @@ var WeaponRegistry = class {
 };
 
 // ../Regolith/packs/ts-scripts/hitTest.ts
-world3.afterEvents.entityHitBlock.subscribe((eventData) => {
+world4.afterEvents.entityHitBlock.subscribe((eventData) => {
   const entity = eventData.damagingEntity;
   if (!(entity instanceof Player3)) return;
   if (!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
   onHit(entity, 0 /* Block */);
 });
-world3.afterEvents.entityHitEntity.subscribe((eventData) => {
+world4.afterEvents.entityHitEntity.subscribe((eventData) => {
   const entity = eventData.damagingEntity;
   const hitEntity = eventData.hitEntity;
   if (!WeaponRegistry.isWeapon(EntityUtils.getMainhandItemStack(entity))) return;
@@ -767,7 +811,7 @@ world3.afterEvents.entityHitEntity.subscribe((eventData) => {
   }
 });
 Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
-  world3.getAllPlayers().forEach((player) => {
+  world4.getAllPlayers().forEach((player) => {
     let shouldSpawnHitDetectEntity = true;
     const BlockRaycastHit = player.getBlockFromViewDirection({ maxDistance: C.BLOCKPLACERANGE + 2 });
     if (BlockRaycastHit !== void 0) {
@@ -779,7 +823,7 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
       }
     }
     const gamemode = player.getGameMode();
-    const entityRaycastRange = gamemode === GameMode2.creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
+    const entityRaycastRange = gamemode === GameMode2.Creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
     if (EntityUtils.getValidEntitiesNearby(player, entityRaycastRange).length > 0) {
       const entityRaycastHit = EntityUtils.getValidEntitiesFromRayCast(player, player.getHeadLocation(), player.getViewDirection(), entityRaycastRange);
       if (entityRaycastHit.length > 0) {
@@ -806,13 +850,13 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
 function initializeHitDetectEntity(entity) {
   const owner = EntityLinker.getOwnerEntity(entity);
   if (owner === void 0) return;
-  const intervalId = system3.runInterval(() => {
+  const intervalId = system4.runInterval(() => {
     if (!EntityUtils.isAlive(entity)) {
-      system3.clearRun(intervalId);
+      system4.clearRun(intervalId);
       return;
     }
     if (!EntityUtils.isAlive(owner)) {
-      system3.clearRun(intervalId);
+      system4.clearRun(intervalId);
       return;
     }
     if (!EntityLinker.getLinkedEntityStasis(entity)) {
@@ -827,7 +871,7 @@ function initializeHitDetectEntity(entity) {
     }
   });
 }
-world3.afterEvents.entityDie.subscribe((eventData) => {
+world4.afterEvents.entityDie.subscribe((eventData) => {
   const entity = eventData.deadEntity;
   if (entity.typeId !== C.HITDETECTENTITYNAME) return;
   renewHitDetectEntityOnAccidentalKill(entity);
@@ -844,7 +888,7 @@ function renewHitDetectEntityOnAccidentalKill(entity) {
   EntityLinker.removeLinkedEntityById(ownerId, linkedEntityId);
   const hitDetectEntity = EntityLinker.spawnLinkedEntity(owner, C.HITDETECTENTITYNAME, { x: 0, y: 0, z: 2 }, true);
   initializeHitDetectEntity(hitDetectEntity);
-  world3.sendMessage("Renewing hit detect entity on reload");
+  world4.sendMessage("Renewing hit detect entity on reload");
 }
 function onHit(entity, hitType) {
   const mainhandItemStack = EntityUtils.getMainhandItemStack(entity);
@@ -854,17 +898,17 @@ function onHit(entity, hitType) {
   if (!weaponObj) return;
   const result = weaponObj.tryExecuteAttack(entity, true);
   if (result.executed) {
-    world3.playSound("item.trident.throw", entity.getHeadLocation(), { volume: 1 });
+    entity.dimension.playSound("item.trident.throw", entity.getHeadLocation(), { volume: 1 });
   }
   if (!result.hit && result.cooldownTime !== void 0) {
-    world3.sendMessage(`Weapon on cooldown, time left: ${result.cooldownTime} ticks`);
+    world4.sendMessage(`Weapon on cooldown, time left: ${result.cooldownTime} ticks`);
   } else {
-    world3.sendMessage(`Attack missed!`);
+    world4.sendMessage(`Attack missed!`);
   }
 }
 
 // ../Regolith/packs/ts-scripts/weapons/weapons.ts
-import { Player as Player4, system as system4 } from "@minecraft/server";
+import { Player as Player4, system as system5 } from "@minecraft/server";
 var WeaponCooldown = class {
   currentTick;
   cooldownAmount;
@@ -873,14 +917,14 @@ var WeaponCooldown = class {
     this.cooldownAmount = cooldownAmount;
   }
   isOnCooldown() {
-    return this.currentTick + this.cooldownAmount >= system4.currentTick;
+    return this.currentTick + this.cooldownAmount >= system5.currentTick;
   }
   getCooldownTime() {
-    const timeLeft = this.currentTick + this.cooldownAmount - system4.currentTick;
+    const timeLeft = this.currentTick + this.cooldownAmount - system5.currentTick;
     return timeLeft > 0 ? timeLeft : 0;
   }
   setNewCooldown(cooldownAmount) {
-    this.currentTick = system4.currentTick;
+    this.currentTick = system5.currentTick;
     this.cooldownAmount = cooldownAmount;
   }
 };
@@ -926,7 +970,7 @@ var MeleeWeapon = class {
     const possibleTargets = EntityUtils.getValidEntitiesNearby(attacker, attackConfig.attack.maxRange, attackConfig.attack.minRange, attackConfig.attack.attackOffset);
     for (const target of possibleTargets) {
       if (attackConfig.attack.isHit(attacker.getHeadLocation(), attacker.getViewDirection(), { x: target.getHeadLocation().x, y: (target.getHeadLocation().y + target.location.y) / 2, z: target.getHeadLocation().z })) {
-        target.applyDamage(attackConfig.damage, { cause: attackConfig.attack.attackType, damagingEntity: attacker });
+        EntityUtils.dealDamage(attacker, target, attackConfig.damage);
         hit = true;
       }
     }
@@ -934,8 +978,8 @@ var MeleeWeapon = class {
     this.weaponCooldown.setNewCooldown(attackConfig.attack.cooldown);
     if (attacker instanceof Player4) attacker.startItemCooldown(this.itemTypeId, attackConfig.attack.cooldown);
     this.incrementAttackIndex();
-    if (this.resetAttackIndexIntervalId !== void 0) system4.clearRun(this.resetAttackIndexIntervalId);
-    this.resetAttackIndexIntervalId = system4.runTimeout(() => {
+    if (this.resetAttackIndexIntervalId !== void 0) system5.clearRun(this.resetAttackIndexIntervalId);
+    this.resetAttackIndexIntervalId = system5.runTimeout(() => {
       this.resetAttackIndex();
     }, C.RESETCOMBOTICKS);
     return { executed: true, hit, effectDrawn: drawEffect };
@@ -961,7 +1005,7 @@ var MeleeWeapon = class {
 };
 
 // ../Regolith/packs/ts-scripts/attacks/slash.ts
-import { EntityDamageCause as EntityDamageCause2, world as world4 } from "@minecraft/server";
+import { EntityDamageCause as EntityDamageCause3 } from "@minecraft/server";
 var Slash = class {
   minRange;
   maxRange;
@@ -978,7 +1022,7 @@ var Slash = class {
     this.totalHorizontalAngleDeg = totalHorizontalAngleDeg;
     this.totalVerticalAngleDeg = totalVerticalAngleDeg;
     this.attackOffset = attackOffset ? attackOffset : { x: 0, y: 0, z: 0 };
-    this.attackType = attackType ? attackType : EntityDamageCause2.entityAttack;
+    this.attackType = attackType ? attackType : EntityDamageCause3.entityAttack;
   }
   isHit(playerPos, playerForward, targetPos) {
     const basis = CustomVectorUtils.createBasisFromForward(playerForward);
@@ -998,7 +1042,6 @@ var Slash = class {
     const forwardDot = Vector3Utils.dot(DNorm, basis.forward);
     const horizontalAngle = Math.atan2(horizontalDot, forwardDot);
     const verticalAngle = Math.atan2(verticalDot, Math.sqrt(forwardDot * forwardDot + horizontalDot * horizontalDot));
-    world4.sendMessage(`Horizontal Angle: ${(horizontalAngle * 180 / Math.PI).toFixed(2)}\xB0, Vertical Angle: ${(verticalAngle * 180 / Math.PI).toFixed(2)}\xB0`);
     return horizontalAngle <= halfH && verticalAngle <= halfV;
   }
   drawEffect(dimension, pos, forward, numOfParticles) {
@@ -1075,7 +1118,7 @@ var SlashAttacks = {
      * 
      * Cooldown: `8` ticks
      * */
-    "NormalRange": new Slash(3.3, 0, 8, 120, 45),
+    "NormalRange": new Slash(3.3, 0, 2, 120, 45),
     /**
      * MaxRange: `4.3` MinRange: `0`
      * 
@@ -1180,7 +1223,10 @@ customSword1.addAttack({
 WeaponRegistry.register(customSword1);
 
 // ../Regolith/packs/ts-scripts/main.ts
-EntityLinker.removeAllNonPersistentLinkedEntities();
-Interval.start();
+import { system as system6 } from "@minecraft/server";
+system6.run(() => {
+  EntityLinker.removeAllNonPersistentLinkedEntities();
+  Interval.start();
+});
 
 //# sourceMappingURL=../debug/main.js.map

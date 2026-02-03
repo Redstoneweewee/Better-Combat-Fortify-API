@@ -6,6 +6,10 @@ import { Vector3Builder, Vector3Utils } from "./utils/minecraft-math";
 import { EntityLinker } from "./utils/entityLinker";
 import { WeaponRegistry } from "./weapons/weaponRegistry";
 
+/**
+ * Should switch over to afterEvents.playerSwingStart in v2.5.0 soon
+ */
+
 enum HitType {
     Block,
     Entity,
@@ -34,7 +38,6 @@ world.afterEvents.entityHitEntity.subscribe(eventData => {
     }
 });
 
-
 Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
     world.getAllPlayers().forEach(player => {
         let shouldSpawnHitDetectEntity = true;
@@ -50,7 +53,7 @@ Interval.addInterval(new Interval.MainInterval(C.HITTESTINTERVALNAME, () => {
             //world.sendMessage(`Block hit at distance: ${distance}`);
         }
         const gamemode = player.getGameMode();
-        const entityRaycastRange = gamemode === GameMode.creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
+        const entityRaycastRange = gamemode === GameMode.Creative ? C.CREATIVEHITRANGE : C.SURVIVALHITRANGE;
         //world.sendMessage(`Gamemode: ${gamemode}, Enum: ${GameMode.creative} Entity raycast range: ${entityRaycastRange}`);
             //world.sendMessage(EntityUtils.getValidEntitiesNearby(player, entityRaycastRange).length.toString());
         if(EntityUtils.getValidEntitiesNearby(player, entityRaycastRange).length > 0) {
@@ -139,7 +142,7 @@ function onHit(entity: Entity, hitType: HitType) {
 
     const result = weaponObj.tryExecuteAttack(entity, true);
     if(result.executed) {
-        world.playSound("item.trident.throw", entity.getHeadLocation(), {volume: 1});
+        entity.dimension.playSound("item.trident.throw", entity.getHeadLocation(), {volume: 1});
     }
     if(!result.hit && result.cooldownTime !== undefined) {
         world.sendMessage(`Weapon on cooldown, time left: ${result.cooldownTime} ticks`);

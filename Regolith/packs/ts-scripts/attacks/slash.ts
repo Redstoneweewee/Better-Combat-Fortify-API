@@ -51,7 +51,7 @@ export class Slash implements IAttack {
         const horizontalAngle = Math.atan2(horizontalDot, forwardDot);
         const verticalAngle = Math.atan2(verticalDot, Math.sqrt(forwardDot * forwardDot + horizontalDot * horizontalDot));
 
-        world.sendMessage(`Horizontal Angle: ${(horizontalAngle * 180 / Math.PI).toFixed(2)}°, Vertical Angle: ${(verticalAngle * 180 / Math.PI).toFixed(2)}°`);
+        //world.sendMessage(`Horizontal Angle: ${(horizontalAngle * 180 / Math.PI).toFixed(2)}°, Vertical Angle: ${(verticalAngle * 180 / Math.PI).toFixed(2)}°`);
         //world.sendMessage(`Half Horizontal Bound: ${(halfH * 180 / Math.PI).toFixed(2)}°, Half Vertical Bound: ${(halfV * 180 / Math.PI).toFixed(2)}°`);
         return horizontalAngle <= halfH && verticalAngle <= halfV;
     }
@@ -156,7 +156,7 @@ export const SlashAttacks = {
          * 
          * Cooldown: `8` ticks
          * */
-        "NormalRange": new Slash(3.3, 0, 8, 120, 45),
+        "NormalRange": new Slash(3.3, 0, 2, 120, 45),
         /**
          * MaxRange: `4.3` MinRange: `0`
          * 

@@ -5,7 +5,7 @@
         "name": "!!§e§lBETTER COMBAT - Fortify API [RP] (Development Pack)",
 		"uuid": "c2b1d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
         "version": [ 1, 0, 0 ],
-        "min_engine_version": [ 1, 19, 70 ]
+        "min_engine_version": [ 1, 21, 100 ]
     },
     "modules": [
         {

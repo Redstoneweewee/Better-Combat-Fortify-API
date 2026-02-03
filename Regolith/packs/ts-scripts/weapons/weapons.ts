@@ -93,7 +93,7 @@ export class MeleeWeapon {
 
         for(const target of possibleTargets) {
             if(attackConfig.attack.isHit(attacker.getHeadLocation(), attacker.getViewDirection(), {x: target.getHeadLocation().x, y: (target.getHeadLocation().y+target.location.y)/2, z: target.getHeadLocation().z})) {
-                target.applyDamage(attackConfig.damage, {cause: attackConfig.attack.attackType, damagingEntity: attacker});
+                EntityUtils.dealDamage(attacker, target, attackConfig.damage);
                 hit = true;
             }
         }
