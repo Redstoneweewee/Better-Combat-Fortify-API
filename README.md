@@ -39,12 +39,12 @@ Before contributing to this project, ensure you have the following installed:
 
 1. Clone the repository
 2. Install dependencies:
-   ```bash
+   ```powershell
    npm install
    ```
 3. Run just-scripts to convert ts to js:
    ```bash
-   just-scripts local-deploy
+   npx just-scripts local-deploy
    ```
 4. Run Regolith to deploy to Minecraft development folders:
    ```bash
@@ -52,33 +52,57 @@ Before contributing to this project, ensure you have the following installed:
    ```
 
 ### Continuous Development
-5. Place just-scripts and Regolith on watch:
+
+#### Option 1. Create a Powershell function to run both commands:
+   1. Run `$PROFILE` in PowerShell to get the path to your PowerShell profile file:
+      ```powershell
+      $PROFILE
+      ```
+      This will output a path like: `C:\Users\YourUsername\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
+   
+   2. Open the profile file in your code editor. If the file doesn't exist, create it first
+   
+   3. Add the following function to your PowerShell profile file:
+      ```powershell
+      function fortify_dev_watch {
+          $projectRoot = Get-Location
+
+          Push-Location "$projectRoot/ts-setup"
+          $npxProcess = Start-Process npx `
+              -ArgumentList "just-scripts local-deploy --watch" `
+              -NoNewWindow `
+              -PassThru
+          Pop-Location
+
+          try {
+              Push-Location "$projectRoot/Regolith"
+              regolith watch
+          }
+          finally {
+              Write-Host "Stopping dev processes..."
+              Stop-Process -Id $npxProcess.Id -Force -ErrorAction SilentlyContinue
+              Pop-Location
+          }
+      }
+      ```
+   
+   4. Save the file and reload your code editor
+   
+   5. Navigate to your project root and run the function:
+      ```powershell
+      cd "path/to/Better-Combat-Fortify-API"
+      fortify_dev_watch
+      ```
+#### Option 2. Place just-scripts and Regolith on watch individually:
+   1. On Powershell terminal 1, run:
    ```bash
-   just-scripts local-deploy --watch
+   cd ts-setup
+   npx just-scripts local-deploy --watch
+   ```
+   2. On Powershell terminal 2, run:
+   ```bash
+   cd Regolith
    regolith watch
-   ```
-   Or use this powershell function in your $PROFILE:
-   ```
-    function fortify_dev_watch {
-        $projectRoot = Get-Location
-
-        Push-Location "$projectRoot/ts-setup"
-        $npxProcess = Start-Process npx `
-            -ArgumentList "just-scripts local-deploy --watch" `
-            -NoNewWindow `
-            -PassThru
-        Pop-Location
-
-        try {
-            Push-Location "$projectRoot/Regolith"
-            regolith watch
-        }
-        finally {
-            Write-Host "Stopping dev processes..."
-            Stop-Process -Id $npxProcess.Id -Force -ErrorAction SilentlyContinue
-            Pop-Location
-        }
-    }
    ```
 
 ## License  
