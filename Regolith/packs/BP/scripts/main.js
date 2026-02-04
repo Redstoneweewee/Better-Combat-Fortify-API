@@ -1087,134 +1087,29 @@ var Slash = class {
 };
 var SlashAttacks = {
   "Dagger": {
-    /**
-     * MaxRange: `2.8` MinRange: `0`
-     * 
-     * Horizontal Angle: `90°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `10` ticks
-     */
-    "ShortRangeCenter": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45),
-    /**
-     * MaxRange: `2.8` MinRange: `0`
-     * 
-     * Horizontal Angle: `90°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `10` ticks
-     */
-    "ShortRangeLeft": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45, { x: -0.5, y: 0, z: 0 }),
-    /**
-     * MaxRange: `2.8` MinRange: `0`
-     * 
-     * Horizontal Angle: `90°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `10` ticks
-     */
-    "ShortRangeRight": new Slash(C.MELEERANGE.SHORT, 0, 10, 90, 45, { x: 0.5, y: 0, z: 0 })
+    "ShortRangeCenter": new Slash(C.MELEERANGE.SHORT, C.MELEERANGE.NONE, 10, 90, 45),
+    "ShortRangeLeft": new Slash(C.MELEERANGE.SHORT, C.MELEERANGE.NONE, 10, 90, 45, { x: -0.5, y: 0, z: 0 }),
+    "ShortRangeRight": new Slash(C.MELEERANGE.SHORT, C.MELEERANGE.NONE, 10, 90, 45, { x: 0.5, y: 0, z: 0 })
   },
   "Sword": {
-    /**
-     * MaxRange: `3.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `120°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `12` ticks
-     */
-    "NormalRange": new Slash(C.MELEERANGE.MEDIUM, 0, 12, 120, 45),
-    /**
-     * MaxRange: `4.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `120°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `12` ticks
-     */
-    "LongRange": new Slash(C.MELEERANGE.LONG, 0, 12, 120, 45),
-    /**
-     * MaxRange: `5.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `120°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `12` ticks
-     */
-    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 12, 120, 45)
+    "NormalRange": new Slash(C.MELEERANGE.MEDIUM, C.MELEERANGE.NONE, 12, 120, 45),
+    "LongRange": new Slash(C.MELEERANGE.LONG, C.MELEERANGE.NONE, 12, 120, 45),
+    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, C.MELEERANGE.NONE, 12, 120, 45)
   },
   "Claymore": {
-    /**
-     * MaxRange: `4.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `180°` Vertical Angle: `60°`
-     * 
-     * Cooldown: `12` ticks
-     */
-    "LongRange": new Slash(C.MELEERANGE.LONG, 0, 12, 180, 60),
-    /**
-     * MaxRange: `5.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `180°` Vertical Angle: `60°`
-     * 
-     * Cooldown: `12` ticks
-     */
-    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 12, 180, 60)
+    "LongRange": new Slash(C.MELEERANGE.LONG, C.MELEERANGE.NONE, 12, 180, 60),
+    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, C.MELEERANGE.NONE, 12, 180, 60)
   },
   "Glaive": {
-    /**
-     * MaxRange: `6.3` MinRange: `2`
-     * 
-     * Horizontal Angle: `150°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `12` ticks
-     */
-    "NormalRangeCenter": new Slash(C.MELEERANGE.EXTREME, 2, 12, 150, 45),
-    /**
-     * MaxRange: `6.3` MinRange: `2`
-     * 
-     * Horizontal Angle: `150°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `20` ticks
-     */
-    "NormalRangeSwirl": new Slash(C.MELEERANGE.EXTREME, 2, 20, 360, 45)
+    "NormalRangeCenter": new Slash(C.MELEERANGE.EXTREME, C.MELEERANGE.SHORT, 12, 150, 45),
+    "NormalRangeSwirl": new Slash(C.MELEERANGE.EXTREME, C.MELEERANGE.SHORT, 20, 360, 45)
   },
   "Swirl": {
-    /**
-     * MaxRange: `2.8` MinRange: `0`
-     * 
-     * Horizontal Angle: `360°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `20` ticks
-     */
-    "ShortRange": new Slash(C.MELEERANGE.SHORT, 0, 20, 360, 45),
-    /**
-     * MaxRange: `3.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `360°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `20` ticks
-     */
-    "NormalRange": new Slash(C.MELEERANGE.MEDIUM, 0, 20, 360, 45),
-    /**
-     * MaxRange: `4.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `360°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `20` ticks
-     */
-    "LongRange": new Slash(C.MELEERANGE.LONG, 0, 20, 360, 45),
-    /**
-     * MaxRange: `5.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `360°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `20` ticks
-     */
-    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, 0, 20, 360, 45),
-    /**
-     * MaxRange: `6.3` MinRange: `0`
-     * 
-     * Horizontal Angle: `360°` Vertical Angle: `45°`
-     * 
-     * Cooldown: `20` ticks
-     */
-    "ExtremeRange": new Slash(C.MELEERANGE.EXTREME, 0, 20, 360, 45)
+    "ShortRange": new Slash(C.MELEERANGE.SHORT, C.MELEERANGE.NONE, 20, 360, 45),
+    "NormalRange": new Slash(C.MELEERANGE.MEDIUM, C.MELEERANGE.NONE, 20, 360, 45),
+    "LongRange": new Slash(C.MELEERANGE.LONG, C.MELEERANGE.NONE, 20, 360, 45),
+    "VeryLongRange": new Slash(C.MELEERANGE.VERYLONG, C.MELEERANGE.NONE, 20, 360, 45),
+    "ExtremeRange": new Slash(C.MELEERANGE.EXTREME, C.MELEERANGE.NONE, 20, 360, 45)
   }
 };
 
