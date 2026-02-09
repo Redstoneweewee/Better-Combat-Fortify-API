@@ -54,7 +54,7 @@ export class Slash implements IAttack {
 
         //world.sendMessage(`Horizontal Angle: ${(horizontalAngle * 180 / Math.PI).toFixed(2)}°, Vertical Angle: ${(verticalAngle * 180 / Math.PI).toFixed(2)}°`);
         //world.sendMessage(`Half Horizontal Bound: ${(halfH * 180 / Math.PI).toFixed(2)}°, Half Vertical Bound: ${(halfV * 180 / Math.PI).toFixed(2)}°`);
-        return horizontalAngle <= halfH && verticalAngle <= halfV;
+        return horizontalAngle >= -halfH && horizontalAngle <= halfH && verticalAngle >= -halfV && verticalAngle <= halfV;
     }
 
 
