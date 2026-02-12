@@ -1044,7 +1044,7 @@ var Slash = class {
     const forwardDot = Vector3Utils.dot(DNorm, basis.forward);
     const horizontalAngle = Math.atan2(horizontalDot, forwardDot);
     const verticalAngle = Math.atan2(verticalDot, Math.sqrt(forwardDot * forwardDot + horizontalDot * horizontalDot));
-    return horizontalAngle <= halfH && verticalAngle <= halfV;
+    return horizontalAngle >= -halfH && horizontalAngle <= halfH && verticalAngle >= -halfV && verticalAngle <= halfV;
   }
   drawEffect(dimension, pos, forward, numOfParticles) {
     const halfH = this.totalHorizontalAngleDeg * Math.PI / 360;
